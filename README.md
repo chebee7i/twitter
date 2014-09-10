@@ -6,6 +6,7 @@ This repository contains scripts relating to a Twitter tweet analysis project. M
 Folders
 -------
 
--   data : Holds scripts for collecting tweet data from Twitter.
-
+-   *data* : Holds scripts for collecting tweet data from Twitter.
+-   *twitterproj* : The Python "library" that should be added to your
+    site-packages. Various scripts will do: `import twitterproj`.
 
