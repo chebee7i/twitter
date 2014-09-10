@@ -1,2 +1,5 @@
 configparser
 tweepy
+pymongo
+shapely
+fiona
