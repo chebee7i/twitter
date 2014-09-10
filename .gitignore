@@ -18,3 +18,7 @@ data/.lock_gzip
 data/.lock_rsync
 data/tweets*
 ratelimit.log
+stream.log
+zipper.log
+rsync.log
+
