@@ -1,0 +1,33 @@
+2014-08-09 ratelimit.log
+    This file now stores, in a single file, all ratelimit information from today onward.
+    It explicitly writes the time of the receipt and the rate-limit message.
+    It also notes when the stream was reset.
+
+On 2014-05-18, we received a "Connection reset by peer" exception. This caused
+the python script stream.py to fail. You can see this in stream.log as follows:
+
+    [Sun May 18 09:33:00 2014] Script already running.
+    Traceback (most recent call last):
+      File "stream.py", line 95, in <module>
+        main_logger()
+    ...
+    socket.error: [Errno 54] Connection reset by peer
+    [Sun May 18 09:35:01 2014] Script already running.
+
+So it fails around 9:33, and is restarted at 9:34 and the logfile notices that its already running at 9:35.
+I've updated (as of 2014-05-18) stream.py to also put a message that it is restarting the script.
+
+Anyway, this error is just a plain old TCP error. Practically it means:
+
+  1) We missed all tweets from when it crashed (9:33) until it was restarted (9:34).
+  2) The log rotation timer of 8 hours was effectively reset. Since we were near the end of
+     a log rotation, the current log file is HUGE, almost twice the size of any typical
+     log file containing nearly 16 hours of tweets.
+
+This also explains why we the log rotations seem to shift every once in a while.
+This is because we must have received some error from the Twitter stream, which causes
+the script to fail and the log rotation timer to reset. This occurs fairly regularly,
+and highlights why it is important to use a cron job that restarts.
+
+As long as we have internet and their API doesn't change, even if we receive errors,
+we should only miss around 1 minute of tweets.
