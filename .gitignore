@@ -11,3 +11,10 @@
 
 # ignore coverage information output by `nosetests --with-coverage`
 .coverage
+
+# lock files
+data/.lock
+data/.lock_gzip
+data/.lock_rsync
+data/tweets*
+ratelimit.log

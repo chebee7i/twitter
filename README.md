@@ -8,5 +8,10 @@ Folders
 
 -   *data* : Holds scripts for collecting tweet data from Twitter.
 -   *twitterproj* : The Python "library" that should be added to your
-    site-packages. Various scripts will do: `import twitterproj`.
+    site-packages. Various scripts will expect the following code to
+    succeed: `import twitterproj`.
 
+The `requirements.txt` file lists packages that scripts in this project
+will need. Install them all at once:
+
+    pip install -r requirements.txt
