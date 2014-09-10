@@ -1,7 +1,10 @@
+Google Maps Zoom Level Resolutions
+    http://gis.stackexchange.com/questions/7430/what-ratio-scales-do-google-maps-zoom-levels-correspond-to
+
 What are FIPS?
     http://www.policymap.com/blog/2012/07/tips-on-fips-a-quick-guide-to-geographic-place-codes/
 
-Information about count and county subdivisions:
+Information about count and county subdivisions from 2010 census:
     http://www.census.gov/geo/reference/codes/cou.html
     http://www.census.gov/geo/reference/codes/cousub.html
     http://www.census.gov/geo/reference/codes/files/national_county.txt
