@@ -4,11 +4,11 @@ Information on mongo/pymongo
 To find all documents that have a nonzero number of hashtags,
 we can do:
 
-    tweets.find({'hashtags.0': {$exists: 1})
+    tweets.find({'hashtags.0': {$exists: 1}})
 
 We could also do the following, but note, it also returns elements that 
 do not have a hashtags field. This is not an issue in our database since
-we made sure each document had the field.
+we made sure each document had the field. It also seems to be slower.
 
     tweets.find({hashtags: {$not: {$size: 0}}})
 
@@ -97,4 +97,32 @@ then a sparse index.
 The db with lowercased hashtags, a hashtags collection with index on count,
 a has_hashtags field with sparse index: will be backed up to 
 mongodb_2014-09-11
+    
+    > db.runCommand(
+        { aggregate: "tweets",
+          pipeline: [
+            {$match: {has_hashtags:true}},
+            {$group: {
+                _id:"$user.id", 
+                count: {$sum: 1},
+            }},
+            {$out: "userHashtagTweetCount"}
+          ],
+          allowDiskUse: true
+        }
+    )
+
+Created more tables...
+
+> db.runCommand({aggregate:"tweets", pipeline: [{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userTweetCount"}],allowDiskUse:true})
+
+{ "result" : [ ], "ok" : 1 }
+> 
+> db.userTweetCount.count()
+3933010
+> db.userTweetCount.ensureIndex({count:-1})
+
+> db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userHashtagTweetCount"}],allowDiskUse:true})
+
+> db.userHashtagTweetCount.ensureIndex({count:-1})
 
