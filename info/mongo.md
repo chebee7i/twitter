@@ -44,7 +44,7 @@ an element which contained the tweet IDs mentioning each hashtag.
         {$out: "hashtags"}
     ])
 
-Mongodb failed and complained about memory issues. So avoided the 
+Mongodb failed and complained about memory issues. So we avoided the 
 aggregation memory limit and allowed it to use disk space.
 
     > db.runCommand(
@@ -64,7 +64,7 @@ aggregation memory limit and allowed it to use disk space.
 
 But this still failed since mongodb has a hard limit of 16 MiB per document.
 To store all tweets mentioning a particular hashtag would be too large.
-So we remove the "tweets" field.
+So we removed the "tweets" field.
 
 We also created an index for the counts.
 -1 for descending from high to low.
@@ -95,8 +95,8 @@ then a sparse index.
     db.tweets.ensureIndex({'has_hashtags':1}, {sparse: true})
 
 The db with lowercased hashtags, a hashtags collection with index on count,
-a has_hashtags field with sparse index: will be backed up to 
-mongodb_2014-09-11
+a has_hashtags field with sparse index...was backed up to 
+mongodb_2014-09-13.
     
     > db.runCommand(
         { aggregate: "tweets",
@@ -125,4 +125,16 @@ Created more tables...
 > db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userHashtagTweetCount"}],allowDiskUse:true})
 
 > db.userHashtagTweetCount.ensureIndex({count:-1})
+
+Pulling out hashtagged tweets into their own collection.
+
+> db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$out:"hashtagTweets"}], allowDiskUse:true})
+> db.hashtagTweets.ensureIndex({created_at: 1})
+
+Now we want to be able to query using MongoDBs geospatial tools.
+So we will create a 2dsphere index. We might also be interested in
+seeing location data by date. So we create a compound index for that.
+
+db.hashtagTweets.ensureIndex({coordinates: "2dsphere"})
+db.hashtagTweets.ensureIndex({coordinates: "2dsphere", created_at: 1})
 
