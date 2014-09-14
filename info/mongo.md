@@ -114,27 +114,25 @@ mongodb_2014-09-13.
 
 Created more tables...
 
-> db.runCommand({aggregate:"tweets", pipeline: [{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userTweetCount"}],allowDiskUse:true})
+    > db.runCommand({aggregate:"tweets", pipeline: [{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userTweetCount"}],allowDiskUse:true})
 
-{ "result" : [ ], "ok" : 1 }
-> 
-> db.userTweetCount.count()
-3933010
-> db.userTweetCount.ensureIndex({count:-1})
+    > db.userTweetCount.count()
+    3933010
+    > db.userTweetCount.ensureIndex({count:-1})
 
-> db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userHashtagTweetCount"}],allowDiskUse:true})
+    > db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$group:{_id:"$user.id",count:{$sum:1},}},{$out:"userHashtagTweetCount"}],allowDiskUse:true})
 
-> db.userHashtagTweetCount.ensureIndex({count:-1})
+    > db.userHashtagTweetCount.ensureIndex({count:-1})
 
 Pulling out hashtagged tweets into their own collection.
 
-> db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$out:"hashtagTweets"}], allowDiskUse:true})
-> db.hashtagTweets.ensureIndex({created_at: 1})
+    > db.runCommand({aggregate:"tweets", pipeline: [{$match:{has_hashtags:true}},{$out:"hashtagTweets"}], allowDiskUse:true})
+    > db.hashtagTweets.ensureIndex({created_at: 1})
 
 Now we want to be able to query using MongoDBs geospatial tools.
 So we will create a 2dsphere index. We might also be interested in
 seeing location data by date. So we create a compound index for that.
 
-db.hashtagTweets.ensureIndex({coordinates: "2dsphere"})
-db.hashtagTweets.ensureIndex({coordinates: "2dsphere", created_at: 1})
+    > db.hashtagTweets.ensureIndex({coordinates: "2dsphere"})
+    > db.hashtagTweets.ensureIndex({coordinates: "2dsphere", created_at: 1})
 
