@@ -136,3 +136,21 @@ seeing location data by date. So we create a compound index for that.
     > db.hashtagTweets.ensureIndex({coordinates: "2dsphere"})
     > db.hashtagTweets.ensureIndex({coordinates: "2dsphere", created_at: 1})
 
+We have identified a set of users we would like to ignore, since
+they appear to be robots. We will do another hashtag aggregation that 
+ignores these users. Since we have extracted hashtagged tweets already,
+we can use this smaller table.
+
+
+    > db.runCommand({ 
+         aggregate: "hashtagTweets", 
+         pipeline: [{$match: {"user.id" : {$ni : [LIST OF IDS]}}}, 
+                    {$unwind: "$hashtags"},
+                    {$group: {_id:"$hashtags", count: {$sum:1}}},
+                    {$out: "hashtags.botFiltered"}], 
+         allowDiskUse: true
+    })
+
+However, getting this list of IDs into the mongo terminal is a pain.
+So we do this with a script: botFiltered.py
+
