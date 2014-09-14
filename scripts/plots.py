@@ -55,14 +55,26 @@ def hashtag_counts(ax=None):
     ax.set_xscale('log')
     ax.figure.savefig('hashtagCounts.pdf')
 
+def hashtag_botFiltered_counts(ax=None):
+    tweets, db, conn = twitterproj.connect()
+    coll = db.hashtags.botFiltered
+    out, mean, std = plot_counts(coll, ax)
+    ax = out[0].axes
+    ax.set_xlabel('A hashtag appears $x$ times')
+    ax.set_ylabel('Number of hashtags appearing $x$ times')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.figure.savefig('hashtagCountsBotFiltered.pdf')
+
 
 if __name__ == '__main__':
+    #f, ax = plt.subplots()
+    #tweet_counts(hashtags=True, ax=ax)
+    #f, ax = plt.subplots()
+    #tweet_counts(hashtags=False, ax=ax)
+    #f, ax = plt.subplots()
+    #hashtag_counts(ax=ax)
     f, ax = plt.subplots()
-    tweet_counts(hashtags=True, ax=ax)
-    f, ax = plt.subplots()
-    tweet_counts(hashtags=False, ax=ax)
-    f, ax = plt.subplots()
-    hashtag_counts(ax=ax)
-
+    hashtag_botFiltered_counts(ax=ax)
 
 

@@ -46,6 +46,9 @@ def hashtags_by_count(filename):
     by_count(filename, db.hashtags)
 
 if __name__ == '__main__':
-    hashtags_by_count('hashtags.csv')
-    users_by_count('userCounts_hashtag_tweets.csv', hashtags=True)
-    users_by_count('userCounts_all_tweets.csv', hashtags=False)
+    tweets, db, client = twitterproj.connect()
+    #hashtags_by_count('hashtags.csv')
+    #users_by_count('userCounts_hashtag_tweets.csv', hashtags=True)
+    #users_by_count('userCounts_all_tweets.csv', hashtags=False)
+    by_count('hashtags_botFiltered.csv', db.hashtags.botFiltered)
+
