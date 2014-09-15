@@ -18,10 +18,10 @@ def polygon_hashtags(collection, polygon, skip_users=None):
     collection : MongoDB collection
         The collection of tweets.
     polygon : Shapely Polygon, geoJSON Polygon, list
-        The coordinates of the polygon. Note that for a list, it should be a
-        list of LinearRing coordinate arrays. A LinearRing coordinate array
-        is list of (longitude, latitude) pairs that is closed---the first and
-        last point must be the same).
+        The coordinates of the polygon. Note that for a list, the [polygon]_
+        should be a list of LinearRing coordinate arrays. A LinearRing
+        coordinate array is a list of (longitude, latitude) pairs that is
+        closed---the first and last point must be the same.
     skip_users : list of int
         A list of Twitter user ids. Any tweet from these user ids will be
         skipped and not included in the counts.
@@ -49,6 +49,9 @@ def polygon_hashtags(collection, polygon, skip_users=None):
     -----
     This relies on MongoDB's geospatial queries.
     A '2dsphere' index on the collection will speed this up.
+    For more information on geojson polygons:
+
+    .. [polygon] http://geojson.org/geojson-spec.html#polygon
 
     """
     if skip_users is None:
