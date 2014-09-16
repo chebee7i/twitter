@@ -1,2 +1,2 @@
 from .helpers import Tweet, connect
-from .geo import polygon_hashtags
+from .geo import hashtag_counts_in

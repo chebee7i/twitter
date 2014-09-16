@@ -6,19 +6,20 @@ from collections import defaultdict
 from shapely.geometry import mapping
 
 __all__ = [
-    'polygon_hashtags',
+    'hashtag_counts_in',
 ]
 
-def polygon_hashtags(collection, polygon, skip_users=None):
+def hashtag_counts_in(collection, geometry, skip_users=None):
     """
-    Returns hashtag counts for all tweets in a polygon.
+    Returns hashtag counts for all tweets in a geometry.
 
     Parameters
     ----------
     collection : MongoDB collection
         The collection of tweets.
-    polygon : Shapely Polygon, geoJSON Polygon, list
-        The coordinates of the polygon. Note that for a list, the [polygon]_
+    geometry : GeoJSON-like geometry or list
+        The GeoJSON-like object representing the desired geometry.
+        This can be a Polygon or MultiPolygon.  For a list, the [polygon]_
         should be a list of LinearRing coordinate arrays. A LinearRing
         coordinate array is a list of (longitude, latitude) pairs that is
         closed---the first and last point must be the same.
@@ -43,7 +44,7 @@ def polygon_hashtags(collection, polygon, skip_users=None):
     ...      [-122.4596959,47.4810022]],
     ... ]
     ...
-    >>> counts, skipped = polygon_hashtags(collection, seattle)
+    >>> counts, skipped = hashtags_counts_in(collection, seattle)
 
     Notes
     -----
@@ -60,25 +61,19 @@ def polygon_hashtags(collection, polygon, skip_users=None):
         skip_users = set(skip_users)
 
     try:
-        # Shapley Polygon to geoJSON-like object
-        coords = mapping(polygon)
+        # Shapley Polygon or MultiPolygon to geoJSON-like object
+        geometry = mapping(geometry)
     except AttributeError:
         pass
 
-    if 'coordinates' in polygon:
-        # A geoJSON-like object
-        coords = polygon['coordinates']
-    else:
-        # Use the polygon as a list of coordinates
-        coords = polygon
+    if 'coordinates' not in geometry:
+        # Use the list to define a polygon.
+        geometry = {'type': 'Polygon', 'coordinates': geometry}
 
     c = collection.find({
         'coordinates': {
             '$geoWithin': {
-                '$geometry' : {
-                    'type': 'Polygon',
-                    'coordinates': coords
-                }
+                '$geometry' : geometry
             }
         }
     })
