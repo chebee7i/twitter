@@ -10,3 +10,9 @@ Information about count and county subdivisions from 2010 census:
     http://www.census.gov/geo/reference/codes/files/national_county.txt
     http://www.census.gov/geo/reference/codes/files/national_cousub.txt
 
+Shapefiles from US Census:
+    https://www.census.gov/geo/maps-data/data/tiger.html
+    https://www.census.gov/geo/maps-data/data/tiger-line.html
+2014
+    https://www.census.gov/geo/maps-data/data/pdfs/tiger/tgrshp2014/TGRSHP2014_TechDoc.pdf
+    

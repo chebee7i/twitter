@@ -55,7 +55,7 @@ def build_collection(botfile=None):
 
     """
     ids = get_bots(botfile)
-    tweets, db, conn = twitterproj.connect()
+    db = twitterproj.connect()
     db.hashtagTweets.aggregate(
         [
             {"$match": {"user.id" : {"$nin" : ids}}},

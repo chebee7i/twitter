@@ -16,7 +16,6 @@ def grouper(n, iterable, fillvalue=None):
     return iterutils.izip_longest(fillvalue=fillvalue, *args)
 
 def by_count(filename, collection):
-    tweets, db, client = twitterproj.connect()
     chunksize = int(1e6)
     lines = []
     with io.open(filename, 'w', encoding='utf-8') as fobj:
@@ -33,7 +32,7 @@ def users_by_count(filename, hashtags=True):
     If hashtags is True, then only count the tweets that have hashtags.
 
     """
-    tweets, db, client = twitterproj.connect()
+    db = twitterproj.connect()
     if hashtags:
         collection = db.userHashtagTweetCount
     else:
@@ -42,11 +41,11 @@ def users_by_count(filename, hashtags=True):
     by_count(filename, collection)
 
 def hashtags_by_count(filename):
-    tweets, db, client = twitterproj.connect()
+    db = twitterproj.connect()
     by_count(filename, db.hashtags)
 
 if __name__ == '__main__':
-    tweets, db, client = twitterproj.connect()
+    db = twitterproj.connect()
     #hashtags_by_count('hashtags.csv')
     #users_by_count('userCounts_hashtag_tweets.csv', hashtags=True)
     #users_by_count('userCounts_all_tweets.csv', hashtags=False)

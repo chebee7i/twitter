@@ -316,9 +316,8 @@ def connect():
     from pymongo import MongoClient
     client = MongoClient()
     db = client.twitter
-    collection = db.tweets
 
-    return collection, db, client
+    return db
 
 def take(n, iterable):
     """Return first n items of the iterable as a list.
@@ -384,7 +383,7 @@ def populate_db(path, dry_run=False):
         path = path[:-1]
     filenames = glob.glob(path + '/*.gz')
 
-    collection, db, client = connect()
+    db = connect()
     p = Pipeline(db, dry_run=dry_run)
 
     sources = set([source['filename']

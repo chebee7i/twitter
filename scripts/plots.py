@@ -12,8 +12,6 @@ def plot_counts(collection, ax=None):
     if ax is None:
         ax = plt.gca()
 
-    tweets, db, conn = twitterproj.connect()
-
     counts = []
     for doc in collection.find():
         counts.append(doc['count'])
@@ -24,7 +22,7 @@ def plot_counts(collection, ax=None):
     return out, mean, std
 
 def tweet_counts(hashtags=True, ax=None):
-    tweets, db, conn = twitterproj.connect()
+    db = twitterproj.connect()
     if hashtags:
         coll = db.userHashtagTweetCount
     else:
@@ -45,7 +43,7 @@ def tweet_counts(hashtags=True, ax=None):
     ax.figure.savefig('user{0}TweetCounts.pdf'.format(mod))
 
 def hashtag_counts(ax=None):
-    tweets, db, conn = twitterproj.connect()
+    db = twitterproj.connect()
     coll = db.hashtags
     out, mean, std = plot_counts(coll, ax)
     ax = out[0].axes
@@ -56,7 +54,7 @@ def hashtag_counts(ax=None):
     ax.figure.savefig('hashtagCounts.pdf')
 
 def hashtag_botFiltered_counts(ax=None):
-    tweets, db, conn = twitterproj.connect()
+    db = twitterproj.connect()
     coll = db.hashtags.botFiltered
     out, mean, std = plot_counts(coll, ax)
     ax = out[0].axes
