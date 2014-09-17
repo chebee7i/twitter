@@ -14,6 +14,7 @@ Folders
 -   *data* : Holds scripts for collecting tweet data from Twitter.
 -   *info* : Holds links and other pieces of information relevant to project.
 -   *scripts* : Holds scripts that use the data and `twitterproj` library.
+-   *tiger* : Holds TIGER/Line shapefile data.
 -   *twitterproj* : The Python "library" that should be added to your
     site-packages. Various scripts will expect the following code to
     succeed: `import twitterproj`.
