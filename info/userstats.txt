@@ -1,0 +1,35 @@
+Some stats about user activity (taken from the "users" collection):
+
+
+In [12]: np.mean(counts)
+Out[12]: 15.64332937083098
+
+In [13]: np.std(counts)
+Out[13]: 202.68999880378769
+
+In [14]: percentiles = [0, 25, 50, 75, 90, 95, 96, 
+   ....: 97, 98, 99, 99.9, 99.99, 99.999, 100]
+
+In [15]: np.percentile(counts, percentiles)   
+Out[15]:
+[1.0,
+ 2.0,
+ 4.0,
+ 12.0,
+ 32.0,
+ 55.0,
+ 64.0,
+ 77.0,
+ 99.0,
+ 150.0,
+ 657.0,
+ 3362.3447999991477,
+ 20926.858370026108
+ 157453.0]
+
+So mean counts is 15. Median is 4.  Std dev is 200. And the 99th percentile is 150 tweets.  
+
+The 1000th most active user had around 1200 tweets...so this is somewhere between the 99.9th and 99.99th percentile. 
+
+[The 3000th most active user is still over 500 tweets...just under 99th percentile!] 
+
