@@ -92,6 +92,8 @@ def autoflag_users():
     """
     Autoflag users who sent out a tweet with an "autobot" flagged hashtag.
 
+    This takes about 20 minutes.
+
     """
     db = twitterproj.connect()
     col = db.hashtags.flagged
@@ -115,6 +117,39 @@ def autoflag_users():
         if 'avoid' not in user:
             user['avoid'] = False
             db.users.flagged.update({'_id': user['_id']}, {"$set": user})
+
+
+def export_autoflagged_users(filename, user_collection=None):
+    """
+    Writes autoflagged users to file, sorted by the number of tweets.
+
+    """
+    db = twitterproj.connect()
+    if user_collection is None:
+        user_collection = db.users
+
+    flagged = list(db.users.flagged.find())
+    uids = [f['_id'] for f in flagged]
+    counts = list(user_collection.find({"_id": {"$in": uids}}))
+    counts = dict([(c['_id'], int(c['count'])) for c in counts])
+
+    tuples = [(counts[f['_id']],
+               int(f['first_1000']),
+               int(f['by_hashtag']),
+               int(f['avoid']),
+               f['_id']) for f in flagged]
+
+    tuples.sort(reverse=True)
+    lines = ['{}    {}  {}  {}  {}'.format(str(t[0]).rjust(8), t[1], t[2], t[3],
+                                           t[4]) for t in tuples]
+
+
+    with open(filename, 'w') as fobj:
+        fobj.write("# Columns are: tweet count, first_1000, by_hashtag, avoid, id\n")
+        fobj.write('\n'.join(lines))
+
+    return counts
+
 
 def build_command(botfile=None):
     ids = json.dumps(get_bots(botfile))
