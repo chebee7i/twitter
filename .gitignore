@@ -25,3 +25,6 @@ rsync.log
 # Downloaded Tiger data
 tiger/tl_*
 tiger/TGRSHP2014_TechDoc.pdf
+
+# Generated output
+scripts/data
