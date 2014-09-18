@@ -1,5 +1,5 @@
-Information on mongo/pymongo
-============================
+Information on MongoDB and pymongo
+==================================
 
 The database is called "twitter". Connect to it as follows:
 
