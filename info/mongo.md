@@ -4,25 +4,97 @@ Information on mongo/pymongo
 The database is called "twitter". Connect to it as follows:
 
 ```bash
-    $ mongo twitter
+$ mongo twitter
 ```
 
 The current collections are:
 
 ```js
-    > db.getCollectionNames()
-    [
-            "hashtagCounts.byState",
-            "hashtagTweets",
-            "hashtags",
-            "hashtags.botFiltered",
-            "sources",
-            "system.indexes",
-            "tweets",
-            "userHashtagTweetCount",
-            "userTweetCount"
-    ]
+> db.getCollectionNames()
+[
+        "grid.states",
+        "hashtags",
+        "hashtags.bot_filtered",
+        "hashtags.flagged",
+        "sources",
+        "system.indexes",
+        "tweets",
+        "tweets.with_hashtags",
+        "users",
+        "users.flagged",
+        "users.with_hashtags"
+]
 ```
+
+The primary collections are:
+
+    "tweets"
+    "sources"
+
+All others are derivative, but still very useful, collections. The
+"tweets" collection  holds all tweets under consideration for the
+project (geocoded tweets within a bounding box that includes the
+contiguous states). The "sources" collection lists the source
+files from which the tweets were extracted.
+
+["system.indexes" is an administrative collection that MongoDB uses.]
+
+Generally, collection names will be hierarchical. The first level states what
+the collection is about. So "tweets.with_hashtags" is a collection of tweets
+that have hashtags, and so on. Some collections are temporary and will need
+to be regenerated. A description of each is below.
+
+
+- *grid.states* - Each document is a "state". Each document has the following
+  properties: "name", "counts", "fips", "abbrev". "name" and "abbrev" are
+  the full name and abbreviation of the state. "fips" is the FIPS code
+  associated to the state. "counts" is an object mapping hashtags to the
+  number of times the hashtag appeared in tweets taken from the
+  "tweets.with_hashtags" collection. The documents were populated using
+  the Python package "us" which includes territories. So there are a total
+  of 56 states+DC+territories. Note however, that there are 57 documents in
+  the collection. This is because California could fit within the MongoDB
+  16 MiB document restriction. So it was partitioned into two documents.
+  Care should be taken at the MongoDB command line when working with CA.
+  In the Python library, the function 'hashtag_counts_by_state' will merge
+  the documents for you.
+- *hashtags* - Each document is a hashtag that appears in some tweet. The
+  "count" property lists the number of tweets that mentioned the hashtag.
+- *hashtags.bot_filtered* - Each document is a hashtag that appears in some
+  tweet. The "count" property lists the number of tweets from users not
+  appearing in the "users.flagged" collection (that are marked "avoid")
+  that have mentioned the hashtag.
+- *hashtags.flagged* - Each document is a hashtag that has been flagged
+  as one that we might want to avoid in the analysis. The "autobot"
+  property states whether the hashtag was used to flag users. Those users
+  will appear in "users.flagged" and have the property "by_hashtag" set to
+  true. The property "avoid" is set to true only for those hashtags that
+  should not be included in the analysis.
+- *sources* - Each document contains a source file from which tweets
+  were extracted.
+- *tweets* - Each document is a tweet, containing a subset of all the
+  information that Twitter provides. The raw data (found in the files
+  listed under *sources*) contains all the tweet data. There is a sparse
+  index on tweets that have hashtags.
+- *tweets.with_hashtags* - Each document is a tweet that has at least
+  one hashtag. Since only about 10% of geocoded tweets had hashtags,
+  it made sense to extract these.
+- *users* - Each document is a user (represented by their twitter ID)
+  and there is a "count" property that lists the number of times the user
+  tweeted.
+- *users.flagged* - Each document is a user that has been flagged as
+  one that we might want to ignore during analysis. There are various
+  properties that specify how the user was identify. "first_1000" if true,
+  means the user was manually flagged from the 1000 most active users
+  (active according to counts from the *users* collection). "avoid"
+  means that any "bot_filtered" collection will not contain data from
+  such users. "by_hashtag" means that the user was flagged because they
+  made use of a flagged hashtag.
+- *users.with_hashtags* - Each document is a user (represented by their
+  Twitter ID) and there is a "count" property that lists the number of times
+  the user tweeted with a hashtag.
+
+    "hashtagTweets"
 
 Other information
 =================
@@ -33,7 +105,7 @@ we can do:
 
     tweets.find({'hashtags.0': {$exists: 1}})
 
-We could also do the following, but note, it also returns elements that 
+We could also do the following, but note, it also returns elements that
 do not have a hashtags field. This is not an issue in our database since
 we made sure each document had the field. It also seems to be slower.
 
@@ -48,12 +120,14 @@ Mongo Database
 --------------
 Locally, we built a mongodb database called 'twitter'.
 There were two collections:
+
     sources : Holds the names of every file from which tweets were inserted.
     tweets  : Holds the actual tweets.
+
 The format of each document in specified in `twitterproj/helpers.py`.
 Roughly, this was 4 months of data. Each day had 3 source files, with each
 source file being about 2 GiB gzipped (and 11 GiB gunzipped). Of those
-tweets, only continential USA tweets with GPS coordinates were added to 
+tweets, only continential USA tweets with GPS coordinates were added to
 the database. This totaled almost 400 million tweets.
 
 After building the database, we wanted a collection of hashtags.
@@ -64,14 +138,14 @@ an element which contained the tweet IDs mentioning each hashtag.
     > db.tweets.aggregate([
         {$unwind: "$hashtags"},
         {$group: {
-            _id:"$hashtags", 
+            _id:"$hashtags",
             count: {$sum: 1},
             tweets: {$push: "$_id"}
         }},
         {$out: "hashtags"}
     ])
 
-Mongodb failed and complained about memory issues. So we avoided the 
+Mongodb failed and complained about memory issues. So we avoided the
 aggregation memory limit and allowed it to use disk space.
 
     > db.runCommand(
@@ -79,7 +153,7 @@ aggregation memory limit and allowed it to use disk space.
           pipeline: [
             {$unwind: "$hashtags"},
             {$group: {
-                _id:"$hashtags", 
+                _id:"$hashtags",
                 count: {$sum: 1},
                 tweets: {$push: "$_id"} // needs to be removed
             }},
@@ -98,10 +172,10 @@ We also created an index for the counts.
 
     db.hashtags.ensureIndex({count:-1})
 
-Hashtags were originally stored case-sensitively since Twitter displays 
-them sensitively (and that is how we received them). But Twitter treats 
+Hashtags were originally stored case-sensitively since Twitter displays
+them sensitively (and that is how we received them). But Twitter treats
 hashtags case-insensitively for classification purposes. So we decided to
-convert each hashtag to lowercase. [The parser/insert code was updated 
+convert each hashtag to lowercase. [The parser/insert code was updated
 to convert to lowercase at first entry.]
 
     db.tweets.find().forEach(function(tweet) {
@@ -111,7 +185,7 @@ to convert to lowercase at first entry.]
         db.tweets.save(tweet);
     })
 
-This takes about 5 days. Once complete, we will create a new field and 
+This takes about 5 days. Once complete, we will create a new field and
 then a sparse index.
 
     db.tweets.update(
@@ -122,15 +196,15 @@ then a sparse index.
     db.tweets.ensureIndex({'has_hashtags':1}, {sparse: true})
 
 The db with lowercased hashtags, a hashtags collection with index on count,
-a has_hashtags field with sparse index...was backed up to 
+a has_hashtags field with sparse index...was backed up to
 mongodb_2014-09-13.
-    
+
     > db.runCommand(
         { aggregate: "tweets",
           pipeline: [
             {$match: {has_hashtags:true}},
             {$group: {
-                _id:"$user.id", 
+                _id:"$user.id",
                 count: {$sum: 1},
             }},
             {$out: "userHashtagTweetCount"}
@@ -164,17 +238,17 @@ seeing location data by date. So we create a compound index for that.
     > db.hashtagTweets.ensureIndex({coordinates: "2dsphere", created_at: 1})
 
 We have identified a set of users we would like to ignore, since
-they appear to be robots. We will do another hashtag aggregation that 
+they appear to be robots. We will do another hashtag aggregation that
 ignores these users. Since we have extracted hashtagged tweets already,
 we can use this smaller table.
 
 
-    > db.runCommand({ 
-         aggregate: "hashtagTweets", 
-         pipeline: [{$match: {"user.id" : {$ni : [LIST OF IDS]}}}, 
+    > db.runCommand({
+         aggregate: "hashtagTweets",
+         pipeline: [{$match: {"user.id" : {$ni : [LIST OF IDS]}}},
                     {$unwind: "$hashtags"},
                     {$group: {_id:"$hashtags", count: {$sum:1}}},
-                    {$out: "hashtags.botFiltered"}], 
+                    {$out: "hashtags.botFiltered"}],
          allowDiskUse: true
     })
 
