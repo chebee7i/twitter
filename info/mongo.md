@@ -58,8 +58,10 @@ to be regenerated. A description of each is below.
   Care should be taken at the MongoDB command line when working with CA.
   In the Python library, the function 'hashtag_counts_by_state' will merge
   the documents for you.
+
 - *hashtags* - Each document is a hashtag that appears in some tweet. The
   "count" property lists the number of tweets that mentioned the hashtag.
+
 - *hashtags.bot_filtered* - Each document is a hashtag that appears in some
   tweet. The "count" property lists the number of tweets from users not
   appearing in the "users.flagged" collection (that are marked "avoid")
@@ -70,8 +72,10 @@ to be regenerated. A description of each is below.
   will appear in "users.flagged" and have the property "by_hashtag" set to
   true. The property "avoid" is set to true only for those hashtags that
   should not be included in the analysis.
+
 - *sources* - Each document contains a source file from which tweets
   were extracted.
+
 - *tweets* - Each document is a tweet, containing a subset of all the
   information that Twitter provides. The raw data (found in the files
   listed under *sources*) contains all the tweet data. There is a sparse
@@ -97,7 +101,6 @@ to be regenerated. A description of each is below.
   Twitter ID) and there is a "count" property that lists the number of times
   the user tweeted with a hashtag.
 
-    "hashtagTweets"
 
 Other information
 =================
