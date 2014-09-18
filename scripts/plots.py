@@ -24,9 +24,9 @@ def plot_counts(collection, ax=None):
 def tweet_counts(hashtags=True, ax=None):
     db = twitterproj.connect()
     if hashtags:
-        coll = db.userHashtagTweetCount
+        coll = db.users.with_hashtags
     else:
-        coll = db.userTweetCount
+        coll = db.users
 
     out, mean, std = plot_counts(coll, ax)
     ax = out[0].axes
@@ -55,7 +55,7 @@ def hashtag_counts(ax=None):
 
 def hashtag_botFiltered_counts(ax=None):
     db = twitterproj.connect()
-    coll = db.hashtags.botFiltered
+    coll = db.hashtags.bot_filtered
     out, mean, std = plot_counts(coll, ax)
     ax = out[0].axes
     ax.set_xlabel('A hashtag appears $x$ times')

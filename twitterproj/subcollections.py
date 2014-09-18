@@ -16,8 +16,9 @@ def build_hashtag_counts_by_state(collection, shpfile, dry_run=True):
     # ../tiger/tl_2014_us_state.shp
     hci = hashtag_counts_in
 
-    state_counts = collection.database.hashtagCounts.byState
-    state_counts.drop()
+    state_counts = collection.database.grids.states
+    if not dry_run:
+        state_counts.drop()
     with fiona.open(shpfile, 'r') as f:
         out = {}
         for i, feature in enumerate(f):
@@ -71,7 +72,7 @@ def hashtag_counts_by_state(key, val, db):
         hashtag_counts_by_state('abbrev', 'WA')
 
     """
-    c = db.hashtagCounts.byState.find({key: val})
+    c = db.grids.states.find({key: val})
     hashtag_counts = {}
     first = True
     for doc in c:

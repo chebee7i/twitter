@@ -34,9 +34,9 @@ def users_by_count(filename, hashtags=True):
     """
     db = twitterproj.connect()
     if hashtags:
-        collection = db.userHashtagTweetCount
+        collection = db.users.with_hashtags
     else:
-        collection = db.userTweetCount
+        collection = db.users
 
     by_count(filename, collection)
 
@@ -49,5 +49,5 @@ if __name__ == '__main__':
     #hashtags_by_count('hashtags.csv')
     #users_by_count('userCounts_hashtag_tweets.csv', hashtags=True)
     #users_by_count('userCounts_all_tweets.csv', hashtags=False)
-    by_count('hashtags_botFiltered.csv', db.hashtags.botFiltered)
+    by_count('hashtags_botFiltered.csv', db.hashtags.bot_filtered)
 

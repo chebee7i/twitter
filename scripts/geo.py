@@ -36,6 +36,6 @@ def seattle_counts(collection):
 
 if __name__ == '__main__':
     db = twitterproj.connect()
-    #counts, skipped = seattle_counts(db.hashtagTweets)
+    #counts, skipped = seattle_counts(db.tweets.with_hashtags)
     counts = twitterproj.hashtag_counts_by_state('abbrev', 'WA', db)
 
