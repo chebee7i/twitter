@@ -14,8 +14,12 @@ db.hashtagTweets.find({coordinates: {$geoWithin : { $geometry : {type:
 """
 from __future__ import print_function
 
+from collections import OrderedDict
+
+import pymongo
 import twitterproj
 import fiona
+import json
 
 def seattle_counts(collection):
     seattle = [
@@ -30,22 +34,8 @@ def seattle_counts(collection):
     counts, skipped = twitterproj.hashtag_counts_in(collection, seattle)
     return counts, skipped
 
-def hashtag_counts_by_state(collection, shpfile):
-    hci = twitterproj.hashtag_counts_in
-
-    with fiona.open(shpfile, 'r') as f:
-        out = {}
-        for feature in f:
-            name = feature['properties']['NAME']
-            print(name)
-            geometry = feature['geometry']
-            counts, skipped = hci(collection, geometry)
-            out[name] = counts
-    return out
-
-
 if __name__ == '__main__':
     db = twitterproj.connect()
     #counts, skipped = seattle_counts(db.hashtagTweets)
-    counts = hashtag_counts_by_state(db.hashtagTweets,
-                                     '../tiger/tl_2014_us_state.shp')
+    counts = twitterproj.hashtag_counts_by_state('abbrev', 'WA', db)
+
