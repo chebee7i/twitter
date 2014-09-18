@@ -15,4 +15,7 @@ Shapefiles from US Census:
     https://www.census.gov/geo/maps-data/data/tiger-line.html
 2014
     https://www.census.gov/geo/maps-data/data/pdfs/tiger/tgrshp2014/TGRSHP2014_TechDoc.pdf
-    
+
+User Handle from ID:
+    https://twitter.com/intent/user?user_id=XXXXX
+
