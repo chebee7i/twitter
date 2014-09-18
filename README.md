@@ -1,11 +1,16 @@
 twitter
 =======
 
-This repository contains scripts relating to a Twitter tweet analysis project. Most of the functionality is not intended to be a general purpose, user-facing API, so it will be more specific rather than more general---scripts will assume a particular schema for databases, etc. That said, many of the ideas/implementations are probably of more general interest for me in other projects, and possibly, for others as well.
+This repository contains scripts relating to a Twitter tweet analysis project.
+Most of the functionality is not intended to be a general purpose, user-facing
+API, so it will be more specific rather than more general---scripts will
+assume a particular schema for databases, etc. That said, many of the
+ideas/implementations are probably of more general interest for me in other
+projects, and possibly, for others as well.
 
 The project uses Python as the main tool. Tweets are stored in raw text files
 and migrated to a mongodb database. County information is taken from the 2010
-census. shapely, fiona, d3, topojson, and the Google Maps API are used for 
+census. shapely, fiona, d3, topojson, and the Google Maps API are used for
 some simple visualization of the data.
 
 Folders
@@ -23,3 +28,10 @@ The `requirements.txt` file lists packages that scripts in this project
 will need. Install them all at once:
 
     pip install -r requirements.txt
+
+Some of these packages have non-Python requirements. For example, `fiona`
+needs GDAL.
+
+Some scripts will make use of `topojson` when displaying maps using
+Google maps. This is a node.js package, and so, you will need to 
+set up NPM etc.
