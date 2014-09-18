@@ -53,7 +53,7 @@ to be regenerated. A description of each is below.
   "tweets.with_hashtags" collection. The documents were populated using
   the Python package "us" which includes territories. So there are a total
   of 56 states+DC+territories. Note however, that there are 57 documents in
-  the collection. This is because California could fit within the MongoDB
+  the collection. This is because California could not fit within the MongoDB
   16 MiB document restriction. So it was partitioned into two documents.
   Care should be taken at the MongoDB command line when working with CA.
   In the Python library, the function 'hashtag_counts_by_state' will merge
@@ -79,17 +79,20 @@ to be regenerated. A description of each is below.
 - *tweets.with_hashtags* - Each document is a tweet that has at least
   one hashtag. Since only about 10% of geocoded tweets had hashtags,
   it made sense to extract these.
+
 - *users* - Each document is a user (represented by their twitter ID)
   and there is a "count" property that lists the number of times the user
   tweeted.
+
 - *users.flagged* - Each document is a user that has been flagged as
   one that we might want to ignore during analysis. There are various
-  properties that specify how the user was identify. "first_1000" if true,
+  properties that specify how the user was identified. "first_1000" if true,
   means the user was manually flagged from the 1000 most active users
   (active according to counts from the *users* collection). "avoid"
   means that any "bot_filtered" collection will not contain data from
   such users. "by_hashtag" means that the user was flagged because they
   made use of a flagged hashtag.
+
 - *users.with_hashtags* - Each document is a user (represented by their
   Twitter ID) and there is a "count" property that lists the number of times
   the user tweeted with a hashtag.
