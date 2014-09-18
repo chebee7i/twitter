@@ -1,0 +1,6 @@
+Things to do:
+
+    - compare spatial indexing using fiona and rtree to mongodb.
+    - compare using geoJSON for county information to topoJSON (with converting to geoJSON on the fly)
+    - document the database collections
+
