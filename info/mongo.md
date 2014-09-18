@@ -1,6 +1,33 @@
 Information on mongo/pymongo
 ============================
 
+The database is called "twitter". Connect to it as follows:
+
+```bash
+    $ mongo twitter
+```
+
+The current collections are:
+
+```js
+    > db.getCollectionNames()
+    [
+            "hashtagCounts.byState",
+            "hashtagTweets",
+            "hashtags",
+            "hashtags.botFiltered",
+            "sources",
+            "system.indexes",
+            "tweets",
+            "userHashtagTweetCount",
+            "userTweetCount"
+    ]
+```
+
+Other information
+=================
+
+
 To find all documents that have a nonzero number of hashtags,
 we can do:
 
