@@ -1,4 +1,4 @@
-Geotagged tweets from the streaming API were collected. Data collected from 
+Geotagged tweets from the streaming API were collected. Data collected from
 2014-04-25 to 2014-09-01 were filtered and added to a mongodb database,
 subject to the following constraint:
 
@@ -16,3 +16,6 @@ The total number of continential usa tweets with GPS coordiantes:
 
     > db.tweets.count()
     345200158
+
+Scripts may reference a "data" subdirectory to access raw data,
+but this directory will not be tracked.
