@@ -66,6 +66,7 @@ to be regenerated. A description of each is below.
   tweet. The "count" property lists the number of tweets from users not
   appearing in the "users.flagged" collection (that are marked "avoid")
   that have mentioned the hashtag.
+
 - *hashtags.flagged* - Each document is a hashtag that has been flagged
   as one that we might want to avoid in the analysis. The "autobot"
   property states whether the hashtag was used to flag users. Those users
@@ -101,6 +102,36 @@ to be regenerated. A description of each is below.
   Twitter ID) and there is a "count" property that lists the number of times
   the user tweeted with a hashtag.
 
+
+Flagged Users
+=============
+Not all Twitter users are humans;, and including their hashtagged tweets may
+adversely affect analysis. We used a variety of techniques to identify
+"bots". The "users.flagged" table contains our list of flagged users. If
+"avoid" is True for any user, then our analysis does not include any tweets
+from that user.
+
+First, we sorted users by tweet count. Then the first 1000 users on that list
+were manually checked for "bot" status. The reason for sorting by tweet count
+is that many bots tweet more frequently than humans. 364 bots were identified
+and they all have the "first_1000" property set to True, as well as "avoid"
+set to True.
+
+Then, we sorted hashtags by how frequently they were tweeted. From this list,
+we identified hashtags that were likely to have been tweeted primarily by bots.
+Hashtags were labeled: "bad" or "suspicious" or were not labeled. Users who had
+used any of those flagged hashtags were flagged as potentially a bot with the
+"by_hashtag" property---note, some of those users had already been identified
+as bots (243 of the 364 from the "first_1000", in fact). Of the potential bots,
+the 1000 most active of them (according to tweet frequency) that were not
+already marked as "avoid" were manually checked. This revealed an additional
+178 robots, of which 157 were users who had tweeted a "bad" hashtag. All 178
+of these have the "flagged_1000" property set to True.
+
+Finally, since most of the users who tweeted a "bad" hashtag have turned out
+to be bots, we decided to mark all users who used a "bad" hashtag as
+avoid=True. All of these users now have the "bad" property as True. There are
+2059 such users, of which 1659 had not been previously declared to be rebots.
 
 Other information
 =================

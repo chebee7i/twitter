@@ -121,7 +121,10 @@ def autoflag_users():
     db = twitterproj.connect()
     users = users_using_flagged_hashtags({'autobot': True})
     insert_flagged_users(users, by_hashtag=True)
+    normalize_flagged_users()
 
+def normalize_flagged_users():
+    db = twitterproj.connect()
     # Now go through and make sure each user has all three properties.
     for user in db.users.flagged.find():
         if 'by_hashtag' not in user:
@@ -130,6 +133,10 @@ def autoflag_users():
             user['first_1000'] = False
         if 'avoid' not in user:
             user['avoid'] = False
+        if 'bad' not in user:
+            user['bad'] = False
+        if 'flagged_1000' not in user:
+            user['flagged_1000'] = False
         db.users.flagged.update({'_id': user['_id']}, {"$set": user})
 
 
