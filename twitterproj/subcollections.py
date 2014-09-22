@@ -48,6 +48,9 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
     # ../tiger/tl_2014_us_state.shp
     hci = hashtag_counts_in
 
+    all_skipped = 0
+    skips = {}
+
     if not dry_run:
         state_collection.drop()
     with fiona.open(shpfile, 'r') as f:
@@ -60,6 +63,8 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
             geometry = feature['geometry']
             counts, skipped = hci(tweet_collection, geometry, skip_users)
             print("\tSkipped {0} tweets due to user ids.".format(skipped))
+            all_skipped += skipped
+            skips[name] = skipped
             doc = OrderedDict()
             doc['name'] = feature['properties']['NAME']
             doc['counts'] = counts
@@ -85,6 +90,10 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
                 doc2['counts'] = counts2
                 state_collection.insert(doc)
                 state_collection.insert(doc2)
+
+    msg = "\nIn total, skipped {0} tweets due to user ids"
+    print(msg.format(all_skipped))
+    return skips
 
 def hashtag_counts_by_state(key, val, collection):
     """
