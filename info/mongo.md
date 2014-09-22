@@ -13,6 +13,7 @@ The current collections are:
 > db.getCollectionNames()
 [
         "grid.states",
+        "grid.states.bot_filtered",
         "hashtags",
         "hashtags.bot_filtered",
         "hashtags.flagged",
@@ -45,7 +46,7 @@ that have hashtags, and so on. Some collections are temporary and will need
 to be regenerated. A description of each is below.
 
 
-- *grid.states* - Each document is a "state". Each document has the following
+- *grids.states* - Each document is a "state". Each document has the following
   properties: "name", "counts", "fips", "abbrev". "name" and "abbrev" are
   the full name and abbreviation of the state. "fips" is the FIPS code
   associated to the state. "counts" is an object mapping hashtags to the
@@ -58,6 +59,10 @@ to be regenerated. A description of each is below.
   Care should be taken at the MongoDB command line when working with CA.
   In the Python library, the function 'hashtag_counts_by_state' will merge
   the documents for you.
+
+- *grids.states* - Same as *grids.states*, but tweets are not included in
+  the counting if their user id appears in *users.flagged* and has the
+  "avoid" property being true.
 
 - *hashtags* - Each document is a hashtag that appears in some tweet. The
   "count" property lists the number of tweets that mentioned the hashtag.

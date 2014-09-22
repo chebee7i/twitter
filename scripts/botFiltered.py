@@ -187,6 +187,8 @@ def build_bot_filtered_collection():
     """
     Builds the bot-filtered collection.
 
+    Takes about 7 minutes.
+
     """
     db = twitterproj.connect()
     uids = [u['_id'] for u in db.users.flagged.find({'avoid': True}, {'_id': True})]

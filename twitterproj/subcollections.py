@@ -11,13 +11,14 @@ import json
 import us
 
 from .geo import hashtag_counts_in
+from .helpers import connect
 
 __all__ = [
     'hashtags_counts__states',
 ]
 
 def get_skip_users():
-    db = twitterproj.connect()
+    db = connect()
     coll = db.users.flagged
     uids = [u['_id'] for u in coll.find({'avoid': True}, {'_id': True})]
 
@@ -57,8 +58,8 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
             name = feature['properties']['NAME']
             print(name)
             geometry = feature['geometry']
-            counts, skipped = hci(collection, geometry, skip_users)
-            print("Skipped {0} tweets due to user ids.".format(skipped))
+            counts, skipped = hci(tweet_collection, geometry, skip_users)
+            print("\tSkipped {0} tweets due to user ids.".format(skipped))
             doc = OrderedDict()
             doc['name'] = feature['properties']['NAME']
             doc['counts'] = counts
