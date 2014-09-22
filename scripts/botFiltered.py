@@ -88,6 +88,29 @@ def insert_flagged_hashtags(hashtags, **kwargs):
     for hashtag in hashtags:
         col.update({'_id': hashtag}, {"$set": kwargs}, upsert=True)
 
+def users_using_flagged_hashtags(criteria):
+    """
+    Returns user ids for uses who tweeted hashtags to be avoided.
+
+    Examples
+    --------
+    >>> users_using_flagged_hashtags({'avoid': True})
+    >>> users_using_flagged_hashtags({'autobot': True})
+
+    """
+    db = twitterproj.connect()
+    col = db.hashtags.flagged
+    hashtags = list(col.find(criteria, {'_id': True}))
+    hashtags = [ht['_id'] for ht in hashtags]
+    hashtags = set(hashtags)
+
+    users = set([])
+    for tweet in db.tweets.with_hashtags.find():
+        if hashtags.intersection(set(tweet['hashtags'])):
+            users.add(tweet['user']['id'])
+
+    return users
+
 def autoflag_users():
     """
     Autoflag users who sent out a tweet with an "autobot" flagged hashtag.
@@ -96,16 +119,7 @@ def autoflag_users():
 
     """
     db = twitterproj.connect()
-    col = db.hashtags.flagged
-    hashtags = list(col.find({'autobot': True}, {'_id': True}))
-    hashtags = [ht['_id'] for ht in hashtags]
-    hashtags = set(hashtags)
-
-    users = []
-    for tweet in db.tweets.with_hashtags.find():
-        if hashtags.intersection(set(tweet['hashtags'])):
-            users.append(tweet['user']['id'])
-
+    users = users_using_flagged_hashtags({'autobot': True})
     insert_flagged_users(users, by_hashtag=True)
 
     # Now go through and make sure each user has all three properties.
@@ -116,7 +130,7 @@ def autoflag_users():
             user['first_1000'] = False
         if 'avoid' not in user:
             user['avoid'] = False
-            db.users.flagged.update({'_id': user['_id']}, {"$set": user})
+        db.users.flagged.update({'_id': user['_id']}, {"$set": user})
 
 
 def export_autoflagged_users(filename, user_collection=None):
