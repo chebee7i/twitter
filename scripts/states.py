@@ -4,7 +4,7 @@ Build hashtag counts for states with bot filtration.
 """
 import twitterproj as t
 
-def build_states_collections(bot_filtered=True):
+def build_states_collection(bot_filtered=True):
     db = t.connect()
     if bot_filtered:
         skip = t.subcollections.get_skip_users()
@@ -21,7 +21,7 @@ def build_states_collections(bot_filtered=True):
     )
 
 if __name__ == '__main__':
-    build_states_collection(bot_filtered=True)
-    #build_states_collection(bot_filtered=False)
+    #build_states_collection(bot_filtered=True)
+    build_states_collection(bot_filtered=False)
     pass
 
