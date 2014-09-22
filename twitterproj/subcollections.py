@@ -16,9 +16,10 @@ from .geo import hashtag_counts_in
 from .helpers import connect
 
 __all__ = [
-    'hashtags_counts__states',
-    'hashtags_counts__counties',
+    'hashtag_counts__states',
+    'hashtag_counts__counties',
     'counties_from_json',
+    'get_hashtag_counts',
 ]
 
 def counties_from_json(filename=None):
@@ -277,11 +278,10 @@ def hashtag_counts__counties(db, state=None, bot_filtered=True,
 
     if state is not None:
         desired = state
+        states = [state for state in states if state.abbr == desired]
 
     # Get a list of the counties!
     for state in states:
-        if state is not None and state.abbr != desired:
-            continue
         for county in counties[state.fips]:
             yield get_hashtag_counts('geoid', county['GEOID'], collection)
 

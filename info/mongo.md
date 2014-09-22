@@ -12,6 +12,8 @@ The current collections are:
 ```js
 > db.getCollectionNames()
 [
+        "grid.counties",
+        "grid.counties.bot_filtered",
         "grid.states",
         "grid.states.bot_filtered",
         "hashtags",
@@ -45,24 +47,35 @@ the collection is about. So "tweets.with_hashtags" is a collection of tweets
 that have hashtags, and so on. Some collections are temporary and will need
 to be regenerated. A description of each is below.
 
+- *grids.counties* - Each document is a "county" (county, parish, borough, etc)
+  with the following properties: "state_fips", "county_fips", "landarea",
+  "name", "counts", "geoid". Attributes "state_fips" and "county_fips" are the
+  FIPS code for the state and count. "geoid" is the combined 5-digit string of
+  the state and county FIPS code. "landarea" is the area of land within the
+  county.
+
+- *grids.counties.bot_filtered* - Same as *grids.counties*, but tweets are not
+  included in the counting if their user id appears in the *users.flagged*
+  collection and if the user has the "avoid" property being true.
 
 - *grids.states* - Each document is a "state". Each document has the following
-  properties: "name", "counts", "fips", "abbrev". "name" and "abbrev" are
-  the full name and abbreviation of the state. "fips" is the FIPS code
-  associated to the state. "counts" is an object mapping hashtags to the
-  number of times the hashtag appeared in tweets taken from the
-  "tweets.with_hashtags" collection. The documents were populated using
-  the Python package "us" which includes territories. So there are a total
-  of 56 states+DC+territories. Note however, that there are 57 documents in
-  the collection. This is because California could not fit within the MongoDB
+  properties: "name", "counts", "fips", "abbrev", "landarea". Attributes "name"
+  and "abbrev" are the full name and abbreviation of the state. "fips" is the
+  FIPS code associated to the state. "counts" is an object mapping hashtags
+  to the number of times the hashtag appeared in tweets taken from the
+  "tweets.with_hashtags" collection. "landarea" is the area of land within the
+  state. The documents were populated using the Python package "us" which
+  includes territories. So there are a total of 56 documents---which includes
+  all 50 states, DC and 5 territories. Note however, that there are 57 documents
+  in the collection. This is because California could not fit within the MongoDB
   16 MiB document restriction. So it was partitioned into two documents.
   Care should be taken at the MongoDB command line when working with CA.
-  In the Python library, the function 'hashtag_counts_by_state' will merge
+  In the Python library, the function 'get_hashtag_counts' will merge
   the documents for you.
 
-- *grids.states* - Same as *grids.states*, but tweets are not included in
-  the counting if their user id appears in *users.flagged* and has the
-  "avoid" property being true.
+- *grids.states.bot_filtered* - Same as *grids.states*, but tweets are not
+  included in the counting if their user id appears in *users.flagged*
+  collection and if the user has the "avoid" property being true.
 
 - *hashtags* - Each document is a hashtag that appears in some tweet. The
   "count" property lists the number of tweets that mentioned the hashtag.
