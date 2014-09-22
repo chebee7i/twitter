@@ -1,0 +1,119 @@
+As of 2014-09-22, when we skip users with avoid=True, by state:
+
+West Virginia
+        Skipped 22392 tweets due to user ids.
+Florida
+        Skipped 270036 tweets due to user ids.
+Illinois
+        Skipped 87257 tweets due to user ids.
+Minnesota
+        Skipped 36775 tweets due to user ids.
+Maryland
+        Skipped 59565 tweets due to user ids.
+Rhode Island
+        Skipped 21812 tweets due to user ids.
+Idaho
+        Skipped 10176 tweets due to user ids.
+New Hampshire
+        Skipped 12521 tweets due to user ids.
+North Carolina
+        Skipped 117037 tweets due to user ids.
+Vermont
+        Skipped 4565 tweets due to user ids.
+Connecticut
+        Skipped 48565 tweets due to user ids.
+Delaware
+        Skipped 6829 tweets due to user ids.
+New Mexico
+        Skipped 16139 tweets due to user ids.
+California
+        Skipped 300971 tweets due to user ids.
+New Jersey
+        Skipped 93723 tweets due to user ids.
+Wisconsin
+        Skipped 40104 tweets due to user ids.
+Oregon
+        Skipped 198546 tweets due to user ids.
+Nebraska
+        Skipped 27892 tweets due to user ids.
+Pennsylvania
+        Skipped 68575 tweets due to user ids.
+Washington
+        Skipped 56990 tweets due to user ids.
+Louisiana
+        Skipped 40776 tweets due to user ids.
+Georgia
+        Skipped 69714 tweets due to user ids.
+Alabama
+        Skipped 26205 tweets due to user ids.
+Utah
+        Skipped 15423 tweets due to user ids.
+Ohio
+        Skipped 76514 tweets due to user ids.
+Texas
+        Skipped 263875 tweets due to user ids.
+Colorado
+        Skipped 54060 tweets due to user ids.
+South Carolina
+        Skipped 60986 tweets due to user ids.
+Oklahoma
+        Skipped 68204 tweets due to user ids.
+Tennessee
+        Skipped 35661 tweets due to user ids.
+Wyoming
+        Skipped 4359 tweets due to user ids.
+Hawaii
+        Skipped 0 tweets due to user ids.
+North Dakota
+        Skipped 7740 tweets due to user ids.
+Kentucky
+        Skipped 44599 tweets due to user ids.
+United States Virgin Islands
+        Skipped 0 tweets due to user ids.
+Commonwealth of the Northern Mariana Islands
+        Skipped 0 tweets due to user ids.
+Guam
+        Skipped 0 tweets due to user ids.
+Maine
+        Skipped 14030 tweets due to user ids.
+New York
+        Skipped 102328 tweets due to user ids.
+Nevada
+        Skipped 24091 tweets due to user ids.
+Alaska
+        Skipped 0 tweets due to user ids.
+American Samoa
+        Skipped 0 tweets due to user ids.
+Michigan
+        Skipped 55507 tweets due to user ids.
+Arkansas
+        Skipped 16924 tweets due to user ids.
+Mississippi
+        Skipped 12180 tweets due to user ids.
+Missouri
+        Skipped 64177 tweets due to user ids.
+Montana
+        Skipped 4731 tweets due to user ids.
+Kansas
+        Skipped 23754 tweets due to user ids.
+Indiana
+        Skipped 35711 tweets due to user ids.
+Puerto Rico
+        Skipped 0 tweets due to user ids.
+South Dakota
+        Skipped 4542 tweets due to user ids.
+Massachusetts
+        Skipped 67026 tweets due to user ids.
+Virginia
+        Skipped 97186 tweets due to user ids.
+District of Columbia
+        Skipped 171113 tweets due to user ids.
+Iowa
+        Skipped 21387 tweets due to user ids.
+Arizona
+        Skipped 54250 tweets due to user ids.
+
+---
+
+In total, skipped 3037523 tweets due to user ids
+

@@ -1,6 +1,8 @@
 """
 Build hashtag counts for states with bot filtration.
 
+Takes about 1 hour per collection.
+
 """
 import twitterproj as t
 
