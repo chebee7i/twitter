@@ -12,13 +12,43 @@ import us
 
 from .geo import hashtag_counts_in
 
-def build_hashtag_counts_by_state(collection, shpfile, dry_run=True):
+__all__ = [
+    'hashtags_counts__states',
+]
+
+def get_skip_users():
+    db = twitterproj.connect()
+    coll = db.users.flagged
+    uids = [u['_id'] for u in coll.find({'avoid': True}, {'_id': True})]
+
+
+def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
+                                  skip_users=None, dry_run=True):
+    """
+    Example
+    -------
+
+    Build state counts using hashtagged tweets and skip bots.
+    >>> skip = get_skip_users()
+    >>> build_hashtag_counts_by_state(db.tweets.with_hashtags,
+    ...                               db.grids.states.bot_filtered,
+    ...                               '../tiger/tl_2014_us_state.shp',
+    ...                               skip_users=skip)
+    ...
+
+    Build state counts using hashtagged tweets and do not skip bots.
+    >>> build_hashtag_counts_by_state(db.tweets.with_hashtags,
+    ...                               db.grids.states,
+    ...                               '../tiger/tl_2014_us_state.shp')
+    ...
+
+    """
+
     # ../tiger/tl_2014_us_state.shp
     hci = hashtag_counts_in
 
-    state_counts = collection.database.grids.states
     if not dry_run:
-        state_counts.drop()
+        state_collection.drop()
     with fiona.open(shpfile, 'r') as f:
         out = {}
         for i, feature in enumerate(f):
@@ -27,19 +57,19 @@ def build_hashtag_counts_by_state(collection, shpfile, dry_run=True):
             name = feature['properties']['NAME']
             print(name)
             geometry = feature['geometry']
-            counts, skipped = hci(collection, geometry)
-
+            counts, skipped = hci(collection, geometry, skip_users)
+            print("Skipped {0} tweets due to user ids.".format(skipped))
             doc = OrderedDict()
             doc['name'] = feature['properties']['NAME']
             doc['counts'] = counts
             doc['fips'] = feature['properties']['STATEFP']
             doc['abbrev'] = feature['properties']['STUSPS']
-
+            doc['landarea'] = feature['properties']['ALAND']
             if dry_run:
                 continue
 
             try:
-                state_counts.insert(doc)
+                state_collection.insert(doc)
             except pymongo.errors.DocumentTooLarge:
                 # Hack for CA.
                 # Split in two...must be careful to join when querying.
@@ -52,10 +82,10 @@ def build_hashtag_counts_by_state(collection, shpfile, dry_run=True):
                 counts2 = dict(items[L:])
                 doc['counts'] = counts1
                 doc2['counts'] = counts2
-                state_counts.insert(doc)
-                state_counts.insert(doc2)
+                state_collection.insert(doc)
+                state_collection.insert(doc2)
 
-def hashtag_counts_by_state(key, val, db):
+def hashtag_counts_by_state(key, val, collection):
     """
     Returns a dict of the state containing keys:
 
@@ -72,7 +102,7 @@ def hashtag_counts_by_state(key, val, db):
         hashtag_counts_by_state('abbrev', 'WA')
 
     """
-    c = db.grids.states.find({key: val})
+    c = collection.find({key: val})
     hashtag_counts = {}
     first = True
     for doc in c:
@@ -84,15 +114,19 @@ def hashtag_counts_by_state(key, val, db):
             hashtag_counts['counts'].update(doc['counts'])
     return hashtag_counts
 
-def hashtag_counts__states(db):
+def hashtag_counts__states(db, bot_filtered=True):
     """
     Generator of hashtag counts for each contiguous "state".
 
     """
+    if bot_filtered:
+        collection = db.grids.states.bot_filtered
+    else:
+        collection = db.grids.states
     states = us.STATES
     avoid = set(['AK', 'HI'])
     for state in states:
         if state.abbr in avoid:
             continue
         else:
-            yield hashtag_counts_by_state('abbrev', state.abbr, db)
+            yield hashtag_counts_by_state('abbrev', state.abbr, collection)

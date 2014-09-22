@@ -183,22 +183,21 @@ def build_command(botfile=None):
          allowDiskUse: true}})"""
     return template.format(ids=ids)
 
-def build_collection(botfile=None):
+def build_bot_filtered_collection():
     """
     Builds the bot-filtered collection.
 
     """
-    ids = get_bots(botfile)
     db = twitterproj.connect()
+    uids = [u['_id'] for u in db.users.flagged.find({'avoid': True}, {'_id': True})]
+    db.hashtags.bot_filtered.drop()
     db.tweets.with_hashtags.aggregate(
         [
-            {"$match": {"user.id" : {"$nin" : ids}}},
+            {"$match": {"user.id" : {"$nin" : uids}}},
             {"$unwind": "$hashtags"},
             {"$group": {"_id": "$hashtags", "count": {"$sum": 1}}},
             {"$out": "hashtags.bot_filtered"}
         ],
         allowDiskUse=True
     )
-    db.hashtags.botFiltered.create_index([("count", pymongo.DESCENDING)])
-
-
+    db.hashtags.bot_filtered.create_index([("count", pymongo.DESCENDING)])
