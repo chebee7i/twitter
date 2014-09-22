@@ -21,7 +21,7 @@ def get_skip_users():
     db = connect()
     coll = db.users.flagged
     uids = [u['_id'] for u in coll.find({'avoid': True}, {'_id': True})]
-
+    return uids
 
 def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
                                   skip_users=None, dry_run=True):
