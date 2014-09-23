@@ -24,7 +24,7 @@ def build_counties_collection(bot_filtered=True, dry_run=True):
     )
 
 if __name__ == '__main__':
-    #build_counties_collection(bot_filtered=True, dry_run=False)
-    #build_counties_collection(bot_filtered=False, dry_run=False)
+    build_counties_collection(bot_filtered=True, dry_run=True)
+    build_counties_collection(bot_filtered=False, dry_run=True)
     pass
 
