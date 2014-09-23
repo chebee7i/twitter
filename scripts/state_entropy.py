@@ -16,8 +16,8 @@ def main():
     print("State".ljust(20),
           "Entropy".rjust(12),
           "Hashtags".rjust(12),
-          "Unique Hashtags".rjust(18),
-          "Unique Ratio".rjust(18))
+          "Distinct Hashtags".rjust(18),
+          "Distinct Ratio".rjust(18))
     for state in twitterproj.hashtag_counts__states(db):
         for ht, count in state['counts'].items():
             counts_all[ht] += count
