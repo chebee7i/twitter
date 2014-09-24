@@ -31,7 +31,7 @@ from shapely.geometry import box, asShape
 #      = [ A.longitude, A.latitude, B.longitude, B.latitude]
 #
 ANY = box(-180, -90, 180, 90)
-USA = box(-124.7625, 24.5210, -66.9326, 49.3845) # continental
+USA = box(-124.7625, 24.5210, -66.9326, 49.3845) # contiguous
 
 def create_index(filename, force=False):
     """

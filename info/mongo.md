@@ -1,3 +1,6 @@
+Note: This is my first project with MongoDB. So it is bound to look a bit
+awkward in places.
+
 Information on MongoDB and pymongo
 ==================================
 
