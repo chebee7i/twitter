@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <style type="text/css">
+            html { height: 100% }
+            body { height: 100%; margin: 0; padding: 0 }
+            #map-canvas {
+                height: 100%;
+            }
+        </style>
+
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.exp&key={{ googlekey }}">
+        </script>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.1.0/topojson.min.js"></script>
+
+        {% block morehead %}{% endblock %}
+    </head>
+    <body>
+    {% block body %}{% endblock %}
+    </body>
+</html>
+
+
