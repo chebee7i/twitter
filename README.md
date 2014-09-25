@@ -30,8 +30,8 @@ will need. Install them all at once:
     pip install -r requirements.txt
 
 Some of these packages have non-Python requirements. For example, `fiona`
-needs GDAL.
+needs GDAL (in particular, `ogr2ogr` is used by scripts).
 
 Some scripts will make use of `topojson` when displaying maps using
-Google maps. This is a node.js package, and so, you will need to 
+Google maps. This is a node.js package, and so, you will need to
 set up NPM etc.

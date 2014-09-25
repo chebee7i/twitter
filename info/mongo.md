@@ -325,3 +325,12 @@ However, getting this list of IDs into the mongo terminal is a pain.
 So we do this with a script: botFiltered.py
 
 mongodump --db twitter --out mongodb_2014-09-24
+
+
+GPS Coordinates
+---------------
+Twitter GPS coordinates are in WGS84.
+Most of the map shapefiles we have are NAD83.
+We must convert the shapefiles to WGS84 if we want our comparisons to be accurate.
+However, the difference between the two for North America is very small.
+Someone mentioned on order of 1e-8. So we can get away with it here.

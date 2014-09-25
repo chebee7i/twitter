@@ -9,5 +9,5 @@ curl -O https://www.census.gov/geo/maps-data/data/pdfs/tiger/tgrshp2014/TGRSHP20
 curl -O ftp://ftp2.census.gov/geo/tiger/TIGER2014/COUNTY/tl_2014_us_county.zip
 curl -O ftp://ftp2.census.gov/geo/tiger/TIGER2014/COUNTY/tl_2014_us_state.zip
 curl -O ftp://ftp2.census.gov/geo/tiger/TIGER2014/COUNTY/tl_2014_us_cd114.zip
-
+curl -O http://www2.census.gov/geo/tiger/GENZ2013/cb_2013_us_nation_20m.zip 
 

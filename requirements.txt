@@ -3,4 +3,5 @@ tweepy
 pymongo
 shapely
 fiona
+pyproj
 us
