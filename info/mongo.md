@@ -313,3 +313,4 @@ we can use this smaller table.
 However, getting this list of IDs into the mongo terminal is a pain.
 So we do this with a script: botFiltered.py
 
+mongodump --db twitter --out mongodb_2014-09-24

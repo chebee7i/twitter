@@ -2,8 +2,10 @@ Things to do:
 
     - compare spatial indexing using fiona and rtree to mongodb.
     - compare using geoJSON for county information to topoJSON (with converting to geoJSON on the fly)
+    - build maps using d3 in addition to google maps
     - document the database collections
     - construct or find shp file for Neil Freeman's equal population map.
       http://fakeisthenewreal.org/reform/
       http://mentalfloss.com/sites/default/files/map--50.jpg
-
+    - compare using topojson and converting to geojson on the fly
+      versus just using geojson with googlemaps.
