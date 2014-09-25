@@ -15,10 +15,12 @@ The current collections are:
 ```js
 > db.getCollectionNames()
 [
-        "grid.counties",
-        "grid.counties.bot_filtered",
-        "grid.states",
-        "grid.states.bot_filtered",
+        "grids.counties",
+        "grids.counties.bot_filtered",
+        "grids.squares",
+        "grids.squares.bot_filtered",
+        "grids.states",
+        "grids.states.bot_filtered",
         "hashtags",
         "hashtags.bot_filtered",
         "hashtags.flagged",
@@ -59,6 +61,15 @@ to be regenerated. A description of each is below.
 
 - *grids.counties.bot_filtered* - Same as *grids.counties*, but tweets are not
   included in the counting if their user id appears in the *users.flagged*
+  collection and if the user has the "avoid" property being true.
+
+- *grids.squares* - Each document is a 0.5 degree by 0.5 degree square that has
+  a nonzero intersection with the contiguous USA land mass. The properties are
+  "geometry", which is a geoJSON shape representing the squares, and "counts",
+  which maps hashtags to hashtag counts.
+
+- *grids.squares.bot_filtered* - Same as *grids.squares* but tweets are not
+  included in the counting if their user id apperas in the *users.flagged*
   collection and if the user has the "avoid" property being true.
 
 - *grids.states* - Each document is a "state". Each document has the following
