@@ -60,8 +60,20 @@ def build_sparse_grid(tweet_collection,
 
 
 def us_grid(resolution=.5, sparse=True):
-    long_points = np.linspace(-125, -66, (-66 - -125)/resolution + 1)
-    lat_points = np.linspace(24.5, 49.5, (49.5 - 24.5)/resolution + 1)
+    resolution = .5
+    bounds = USA.bounds
+    # Grid boundaries are determined by nearest degree.
+    min_long = np.floor(bounds[0])
+    min_lat  = np.floor(bounds[1])
+    max_long = np.ceil(bounds[2])
+    max_lat  = np.ceil(bounds[3])
+    # Division should be close to an integer.
+    # Add one to number of points to include the end
+    # This is robust only to resolutions that "evenly" divide the range.
+    nPointsLong = np.around((max_long - min_long) / resolution) + 1
+    nPointsLat  = np.around((max_lat  - min_lat ) / resolution) + 1
+    long_points = np.linspace(min_long, max_long, nPointsLong)
+    lat_points  = np.linspace(min_lat,  max_lat,  nPointsLat )
 
     outline = contiguous_outline2('../tiger/cb_2013_us_nation_20m.shp')
 
@@ -124,5 +136,5 @@ if __name__ == '__main__':
     #plot_us_outline(patch=False)
     #grid = list(us_grid(sparse=True))
     db = twitterproj.connect()
-    build_sparse_grid(db.tweets.with_hashtags, db.grids.squares.bot_filtered, skip_users=True)
-    build_sparse_grid(db.tweets.with_hashtags, db.grids.squares, skip_users=False)
+    #build_sparse_grid(db.tweets.with_hashtags, db.grids.squares.bot_filtered, skip_users=True)
+    #build_sparse_grid(db.tweets.with_hashtags, db.grids.squares, skip_users=False)
