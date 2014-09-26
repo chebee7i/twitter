@@ -36,27 +36,18 @@ def build_sparse_grid(tweet_collection,
     else:
         uids = None
 
-    for cell in us_grid():
+    for i, cell in enumerate(us_grid()):
         counts, skipped = hci(tweet_collection, cell, uids)
         doc = OrderedDict()
         doc['geometry'] = mapping(cell)
         doc['counts'] = counts
+        # increase latitudes to max lat, then increases longitude
+        doc['_id'] = i
         try:
             grid_collection.insert(doc)
         except pymongo.errors.DocumentTooLarge:
-            # Hack for too large...probably won't happen.
-            # Split in two...must be careful to join when querying.
-            del doc['counts']
-            del doc['_id']
-            doc2 = doc.copy()
-            items = counts.items()
-            L = len(items)/2
-            counts1 = dict(items[:L])
-            counts2 = dict(items[L:])
-            doc['counts'] = counts1
-            doc2['counts'] = counts2
-            grid_collection.insert(doc)
-            grid_collection.insert(doc2)
+            # Since we are specifying a unique id, let the error raise.
+            raise
 
 
 def us_grid(resolution=.5, sparse=True):
@@ -136,5 +127,5 @@ if __name__ == '__main__':
     #plot_us_outline(patch=False)
     #grid = list(us_grid(sparse=True))
     db = twitterproj.connect()
-    #build_sparse_grid(db.tweets.with_hashtags, db.grids.squares.bot_filtered, skip_users=True)
-    #build_sparse_grid(db.tweets.with_hashtags, db.grids.squares, skip_users=False)
+    build_sparse_grid(db.tweets.with_hashtags, db.grids.squares.bot_filtered, skip_users=True)
+    build_sparse_grid(db.tweets.with_hashtags, db.grids.squares, skip_users=False)
