@@ -19,6 +19,9 @@
         var initialLat;
         var initialLong;
         var dropMarker = false;
+        var info;
+        var property;
+        var color;
 
         if (("lat" in urlParams) && ("long" in urlParams)) {
             center = new google.maps.LatLng(urlParams["lat"], urlParams["long"]);
@@ -26,6 +29,12 @@
         } else {
             // Center of USA
             center = new google.maps.LatLng(39.833333, -98.583333);
+        }
+
+        if ("property" in urlParams) {
+            property = urlParams["property"];
+        } else {
+            property = "mle_entropy";
         }
 
         function initialize() {
@@ -46,29 +55,60 @@
                 });
             }
 
-            $.getJSON("data/us-10m.json", function(data){
-                geoJsonObject = topojson.feature(data, data.objects.counties)
-                map.data.addGeoJson(geoJsonObject);
+            $.when( $.getJSON("data/us-2014-10m.json"),
+                    $.getJSON("data/state_county_info.json") )
+                .done( function(counties, counties_info) {
+                            info = counties_info[0];
+                            
+                            colors = d3.scale.quantize()
+                                .domain([info['min_county'][property], info['max_county'][property]])
+                                .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
+
+                            geoJsonObject = topojson.feature(counties[0], counties[0].objects.counties)
+                            map.data.addGeoJson(geoJsonObject);
+
+                            var featureStyle = {
+                                fillColor: 'black',
+                                fillOpacity: 0,
+                                strokeOpacity: 0,
+                                strokeWeight: 0.2
+                            };
+                            /*
+                            map.data.setStyle(featureStyle);
+                            */
+                            map.data.setStyle(function(feature) {
+                                var fips = feature.getId();
+                                var props = info[fips];
+                                if (typeof props == 'undefined') {
+                                    return featureStyle;
+                                } else {
+                                    
+                                    return {
+                                        fillColor: colors(props[property]),
+                                        fillOpacity: .5,
+                                        strokeOpacity: .1,
+                                        strokeWeight: 1
+                                    };
+                                }
+                            });
+
+                        });
+
+            map.data.addListener('mouseover', function(event) {
+                    var fips = event.feature.getId();
+                    var props = info[fips];
+                    if (typeof props != 'undefined') {
+                        $("#info").text(props["name"] + ' : ' + property + ' = ' + props[property]);
+                        map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
+                    }
             });
 
-            var featureStyle = {
-                fillColor: 'black',
-                fillOpacity: 0,
-                strokeOpacity: .5,
-                strokeWeight: .2
-            }
-            map.data.setStyle(featureStyle);
-
-map.data.addListener('mouseover', function(event) {
-    $("#info").text(event.feature.getProperty("COUNTY") + ', ' + event.feature.getProperty("STATE"));
-     map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
-});
-
-map.data.addListener('mouseout', function(event) {
-    map.data.revertStyle();
-  });
+            map.data.addListener('mouseout', function(event) {
+                map.data.revertStyle();
+            });
 
         }
+
       google.maps.event.addDomListener(window, 'load', initialize);
     </script>
 {% endblock %}
