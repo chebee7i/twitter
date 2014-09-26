@@ -46,7 +46,7 @@
                 });
             }
 
-            $.getJSON("data/us-10m.json", function(data){
+            $.getJSON("data/us-2014-10m.json", function(data){
                 geoJsonObject = topojson.feature(data, data.objects.states)
                 map.data.addGeoJson(geoJsonObject);
             });
