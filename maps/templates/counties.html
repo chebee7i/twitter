@@ -22,6 +22,7 @@
         var info;
         var property;
         var color;
+        var grid = "county";
 
         if (("lat" in urlParams) && ("long" in urlParams)) {
             center = new google.maps.LatLng(urlParams["lat"], urlParams["long"]);
@@ -37,13 +38,23 @@
             property = "mle_entropy";
         }
 
+        var mapOptions;
+        var map;
+
+        var defaultFeatureStyle = {
+            fillColor: 'black',
+            fillOpacity: 0,
+            strokeOpacity: 0,
+            strokeWeight: 0.2
+        };
+
         function initialize() {
-            var mapOptions = {
+            mapOptions = {
               center: center,
               zoom: 4
             };
 
-            var map = new google.maps.Map(document.getElementById("map-canvas"),
+            map = new google.maps.Map(document.getElementById("map-canvas"),
                                           mapOptions);
 
             // To add the marker to the map, use the 'map' property
@@ -61,30 +72,24 @@
                             info = counties_info[0];
                             
                             colors = d3.scale.quantize()
-                                .domain([info['min_county'][property], info['max_county'][property]])
+                                .domain([rescale(info['min_county'][property]), rescale(info['max_county'][property])])
                                 .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
 
                             geoJsonObject = topojson.feature(counties[0], counties[0].objects.counties)
                             map.data.addGeoJson(geoJsonObject);
 
-                            var featureStyle = {
-                                fillColor: 'black',
-                                fillOpacity: 0,
-                                strokeOpacity: 0,
-                                strokeWeight: 0.2
-                            };
                             /*
-                            map.data.setStyle(featureStyle);
+                            map.data.setStyle(defaultFeatureStyle);
                             */
                             map.data.setStyle(function(feature) {
                                 var fips = feature.getId();
                                 var props = info[fips];
                                 if (typeof props == 'undefined') {
-                                    return featureStyle;
+                                    return defaultFeatureStyle;
                                 } else {
                                     
                                     return {
-                                        fillColor: colors(props[property]),
+                                        fillColor: colors(rescale(props[property])),
                                         fillOpacity: .5,
                                         strokeOpacity: .1,
                                         strokeWeight: 1

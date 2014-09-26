@@ -9,18 +9,114 @@
             #map-canvas {
                 height: 100%;
             }
+            #info {
+                padding:20px;
+            }
+            #options {
+                font-size: 62.5%;
+                text-align:right;
+                float: right;
+                padding-right:10px;
+
+            }
         </style>
 
         <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.exp&key={{ googlekey }}">
         </script>
-        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="http://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
 
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.1.0/topojson.min.js"></script>
-    
+
+        <script type="text/javascript">
+        var property;
+        var rescale;
+        var map;
+        var colors;
+        var grid;
+
+        // All this is ugly and needs cleanup.
+
+        var redraw = function(map) {
+
+            colors = d3.scale.quantize()
+                .domain([rescale(info['min_' + grid][property]), rescale(info['max_' + grid][property])])
+                .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
+
+            map.data.setStyle(function(feature) {
+                var fips = feature.getId();
+                var props = info[fips];
+                if (typeof props == 'undefined') {
+                    return defaultFeatureStyle;
+                } else {
+                    return {
+                        fillColor: colors(rescale(props[property])),
+                        fillOpacity: .5,
+                        strokeOpacity: 0,
+                        strokeWeight: 0
+                    };
+                }
+            });
+        };
+
+        $(document).ready( function() {
+
+        //$("#options").buttonset();
+        $("#options input:radio[name=scale]").change(function() {
+            if ($("#radio1").is(":checked")) {
+                rescale = function(val) {
+                    return val;
+                };
+            } else if ($("#radio2").is(":checked")) {
+                rescale = function(val) {
+                    return Math.log(1 + val);
+                };
+            } else {
+                rescale = function(val) {
+                    return Math.log(Math.log(1+val));
+                };
+            }
+
+            if (typeof map != 'undefined') {
+                redraw(map);
+            }
+        });
+
+        $("#property").change(function() {
+            property = $("#property").val();
+            if (typeof map != 'undefined') {
+                redraw(map);
+            }
+        });
+
+        $("#options input:radio[name='scale']").trigger("change");
+        $
+
+
+        });
+        </script>
+ 
         {% block morehead %}{% endblock %}
     </head>
     <body>
+    <div id="options">
+    Property:
+        <select id="property">
+            <option value="respop72013">Resident Population 07/2013 (est)</option>
+            <option value="landarea">Total Land Area</option>
+            <option value="mle_entropy" selected>Entropy of Hashtag Distribution</option>
+            <option value="tweeted_hashtags">Number of Tweeted Hashtags</option>
+            <option value="distinct_hashtags">Number of Distinct Hashtags</option>
+        </select>
+    <br>
+    Color Scale:
+        <input type="radio" id="radio1" name="scale" value="linear"><label for="radio1">Linear</label>
+        <input type="radio" id="radio2" name="scale" value="log" checked><label for="radio2">Log</label>
+        <input type="radio" id="radio3" name="scale" value="doublelog"><label for="radio3">Log Log</label>
+    </div>
     {% block body %}{% endblock %}
     </body>
 </html>
