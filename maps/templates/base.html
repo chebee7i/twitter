@@ -37,13 +37,17 @@
         var map;
         var colors;
         var grid;
-
+        var domain;
         // All this is ugly and needs cleanup.
 
         var redraw = function(map) {
-
-            colors = d3.scale.quantize()
-                .domain([rescale(info['min_' + grid][property]), rescale(info['max_' + grid][property])])
+            minmax = [rescale(info['min_'+grid][property]), rescale(info['max_'+grid][property])];
+            domain = d3.scale.ordinal()
+                .domain(d3.range(9))
+                .rangePoints(minmax,0)
+                .range();
+            colors = d3.scale.linear()
+                .domain(domain)
                 .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
 
             map.data.setStyle(function(feature) {
@@ -55,8 +59,8 @@
                     return {
                         fillColor: colors(rescale(props[property])),
                         fillOpacity: .5,
-                        strokeOpacity: 0,
-                        strokeWeight: 0
+                        strokeOpacity: .1,
+                        strokeWeight: 1
                     };
                 }
             });
@@ -113,8 +117,8 @@
         </select>
     <br>
     Color Scale:
-        <input type="radio" id="radio1" name="scale" value="linear"><label for="radio1">Linear</label>
-        <input type="radio" id="radio2" name="scale" value="log" checked><label for="radio2">Log</label>
+        <input type="radio" id="radio1" name="scale" value="linear" checked><label for="radio1">Linear</label>
+        <input type="radio" id="radio2" name="scale" value="log"><label for="radio2">Log</label>
         <input type="radio" id="radio3" name="scale" value="doublelog"><label for="radio3">Log Log</label>
     </div>
     {% block body %}{% endblock %}
