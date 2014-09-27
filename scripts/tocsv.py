@@ -106,7 +106,7 @@ def writeall_csv():
     mkdir_p('grids')
 
     for bot_filtered, tail in [(True, '.bot_filtered.csv'), (False, '.csv')]:
-        hashtags = twitterproj.top_hashtags(5000, bot_filtered, 'grids/hashtags' + tail)
+        hashtags = twitterproj.sorted_hashtags(bot_filtered, 'grids/hashtags' + tail)[:5000]
         counts_csv('states', hashtags, 'grids/states_hashtag_counts' + tail, bot_filtered)
         counts_csv('counties', hashtags, 'grids/counties_hashtag_counts' + tail, bot_filtered)
         counts_csv('squares', hashtags, 'grids/squares_hashtag_counts' + tail, bot_filtered)
