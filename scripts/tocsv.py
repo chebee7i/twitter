@@ -22,31 +22,6 @@ def mkdir_p(path):
         else:
             raise
 
-def top_hashtags(n, bot_filtered=True, filename=None):
-    """
-    Returns the `n` most frequently used hashtags.
-
-    """
-    db = twitterproj.connect()
-    if bot_filtered:
-        collection = db.hashtags.bot_filtered
-    else:
-        collection = db.hashtags
-
-    c = collection.find().sort('count', pymongo.DESCENDING).limit(n)
-    hashtags = list(c)
-
-    if filename is not None:
-        with io.open(filename, 'w', encoding='utf-8') as f:
-            f.write("# hashtag,hashtag count\n")
-            lines = []
-            for hashtag in hashtags:
-                line = "{},{}".format(hashtag['_id'], int(hashtag['count']))
-                lines.append(line)
-            f.write('\n'.join(lines))
-
-    return [hashtag['_id'] for hashtag in hashtags]
-
 def csv_states(filename, bot_filtered=True):
     """
     Writes the states to file.
@@ -131,7 +106,7 @@ def writeall_csv():
     mkdir_p('grids')
 
     for bot_filtered, tail in [(True, '.bot_filtered.csv'), (False, '.csv')]:
-        hashtags = top_hashtags(5000, bot_filtered, 'grids/hashtags' + tail)
+        hashtags = twitterproj.top_hashtags(5000, bot_filtered, 'grids/hashtags' + tail)
         counts_csv('states', hashtags, 'grids/states_hashtag_counts' + tail, bot_filtered)
         counts_csv('counties', hashtags, 'grids/counties_hashtag_counts' + tail, bot_filtered)
         counts_csv('squares', hashtags, 'grids/squares_hashtag_counts' + tail, bot_filtered)
