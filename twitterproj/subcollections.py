@@ -249,13 +249,9 @@ def hashtag_counts__states(db, bot_filtered=True):
         collection = db.grids.states.bot_filtered
     else:
         collection = db.grids.states
-    states = us.STATES
-    avoid = set(['AK', 'HI'])
+    states = us.STATES_CONTIGUOUS
     for state in states:
-        if state.abbr in avoid:
-            continue
-        else:
-            yield get_hashtag_counts('abbrev', state.abbr, collection)
+        yield get_hashtag_counts('abbrev', state.abbr, collection)
 
 def hashtag_counts__counties(db, state=None, bot_filtered=True,
                               county_json=None):

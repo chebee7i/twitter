@@ -78,13 +78,11 @@ to be regenerated. A description of each is below.
   FIPS code associated to the state. "counts" is an object mapping hashtags
   to the number of times the hashtag appeared in tweets taken from the
   "tweets.with_hashtags" collection. "landarea" is the area of land within the
-  state. The documents were populated using the Python package "us" which
-  includes territories. So there are a total of 56 documents---which includes
-  all 50 states, DC and 5 territories. Note however, that there are 57 documents
-  in the collection. This is because California could not fit within the MongoDB
-  16 MiB document restriction. So it was partitioned into two documents.
-  Care should be taken at the MongoDB command line when working with CA.
-  In the Python library, the function 'get_hashtag_counts' will merge
+  state. There are a total of 50 documents---which includes the 48 contiguous
+  states and DC, with California getting two documents since it could not fit
+  within the MongoDB 16 MiB document restriction. So it was partitioned into
+  two documents. Care should be taken at the MongoDB command line when working
+  with CA. In the Python library, the function 'get_hashtag_counts' will merge
   the documents for you.
 
 - *grids.states.bot_filtered* - Same as *grids.states*, but tweets are not

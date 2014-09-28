@@ -32,7 +32,7 @@ def sorted_hashtags(bot_filtered=True, filename=None):
 
     return [hashtag['_id'] for hashtag in hashtags]
 
-def region_hashtags(region, hashtags, top_n):
+def region_hashtags(region, hashtags, top_n=None):
     """
     Print the hashtag counts for a region.
 
@@ -41,7 +41,10 @@ def region_hashtags(region, hashtags, top_n):
 
     """
     db = connect()
-    top_ht = set(hashtags[:top_n])
+    if top_n is not None:
+        top_ht = set(hashtags[:top_n])
+    else:
+        top_ht = set(hashtags)
 
     counts_region = region['counts']
     x = [(ht, counts_region[ht]) for ht in hashtags if ht in counts_region]
