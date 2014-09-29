@@ -1,4 +1,4 @@
 from .helpers import Tweet, connect
-from .geo import hashtag_counts_in
+from .geo import *
 from .subcollections import *
 from .hashtags import *
