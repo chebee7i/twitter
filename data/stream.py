@@ -19,8 +19,10 @@ import time
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from tweepy import OAuthHandler, Stream
-from tweepy.streaming import StreamListener
+import tweepy
+from tweepy.auth import OAuthHandler
+from tweepy.streaming import StreamListener, Stream
+
 import json
 
 import configparser
