@@ -18,6 +18,7 @@ from .helpers import connect
 __all__ = [
     'hashtag_counts__states',
     'hashtag_counts__counties',
+    'hashtag_counts__squares',
     'counties_from_json',
     'get_hashtag_counts',
 ]
@@ -77,7 +78,7 @@ def build_hashtag_counts_by_county(tweet_collection, county_collection, shpfile,
     all_skipped = 0
     skips = {}
 
-    fips = contiguous_state_fips()
+    fips = set([state.fips for state in us.STATES_CONTIGUOUS])
 
     if not dry_run:
         county_collection.drop()
@@ -159,12 +160,17 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
     all_skipped = 0
     skips = {}
 
+    # The abbreviations of the contiguous states
+    desired = us.states.mapping('abbr', 'fips', us.STATES_CONTIGUOUS)
+
     if not dry_run:
         state_collection.drop()
     with fiona.open(shpfile, 'r') as f:
         out = {}
         for i, feature in enumerate(f):
             doc = OrderedDict()
+            if feature['properties']['STATEFP'] not in desired:
+                continue
 
             name = feature['properties']['NAME']
             print(name)
@@ -280,4 +286,22 @@ def hashtag_counts__counties(db, state=None, bot_filtered=True,
     for state in states:
         for county in counties[state.fips]:
             yield get_hashtag_counts('geoid', county['GEOID'], collection)
+
+def hashtag_counts__squares(db, bot_filtered=True):
+    """
+    Generator of hashtag counts for each square.
+
+    """
+    if bot_filtered:
+        collection = db.grids.squares.bot_filtered
+    else:
+        collection = db.grids.squares
+
+    # No need to use get_hashtag_counts since all counts for each square
+    # fit in a single document.
+    ids = [d['_id'] for d in collection.find({}, {'_id': True})]
+    ids.sort()
+    for _id in ids:
+        yield collection.find({'_id': _id}).next()
+
 
