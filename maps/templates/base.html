@@ -38,9 +38,12 @@
         var colors;
         var grid;
         var domain;
+        var info;
         // All this is ugly and needs cleanup.
 
-        var redraw = function(map) {
+        var updateColormap = function() {
+            console.log('in updateColormap');
+            console.log(info);
             minmax = [rescale(info['min_'+grid][property]), rescale(info['max_'+grid][property])];
             domain = d3.scale.ordinal()
                 .domain(d3.range(9))
@@ -49,10 +52,13 @@
             colors = d3.scale.linear()
                 .domain(domain)
                 .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
+        }
 
+        var redraw = function(map) {
+            updateColormap();
             map.data.setStyle(function(feature) {
-                var fips = feature.getId();
-                var props = info[fips];
+                var id = feature.getId();
+                var props = info[id];
                 if (typeof props == 'undefined') {
                     return defaultFeatureStyle;
                 } else {
@@ -109,11 +115,7 @@
     <div id="options">
     Property:
         <select id="property">
-            <option value="respop72013">Resident Population 07/2013 (est)</option>
-            <option value="landarea">Total Land Area</option>
-            <option value="mle_entropy" selected>Entropy of Hashtag Distribution</option>
-            <option value="tweeted_hashtags">Number of Tweeted Hashtags</option>
-            <option value="distinct_hashtags">Number of Distinct Hashtags</option>
+            {% block properties %}{% endblock %}
         </select>
     <br>
     Color Scale:

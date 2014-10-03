@@ -19,7 +19,6 @@
         var initialLat;
         var initialLong;
         var dropMarker = false;
-        var info;
         var property;
         var color;
         var grid = "county";
@@ -68,14 +67,10 @@
 
             $.when( $.getJSON("data/us-2014-10m.json"),
                     $.getJSON("data/state_county_info.json") )
-                .done( function(counties, counties_info) {
-                            info = counties_info[0];
-                            
-                            colors = d3.scale.quantize()
-                                .domain([rescale(info['min_county'][property]), rescale(info['max_county'][property])])
-                                .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
-
-                            geoJsonObject = topojson.feature(counties[0], counties[0].objects.counties)
+                .done( function(usdata, usinfo) {
+                            info = usinfo[0];
+                            updateColormap(); 
+                            geoJsonObject = topojson.feature(usdata[0], usdata[0].objects.counties);
                             map.data.addGeoJson(geoJsonObject);
 
                             /*
@@ -103,7 +98,7 @@
                     var fips = event.feature.getId();
                     var props = info[fips];
                     if (typeof props != 'undefined') {
-                        $("#info").text(props["name"] + ' : ' + property + ' = ' + props[property]);
+                        $("#info").text(props["name"] + ' : ' + fips + ' : ' + property + ' = ' + props[property]);
                         map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
                     }
             });
@@ -116,6 +111,15 @@
 
       google.maps.event.addDomListener(window, 'load', initialize);
     </script>
+{% endblock %}
+
+{% block properties %}
+            <option value="respop72013">Resident Population 07/2013 (est)</option>
+            <option value="landarea">Total Land Area</option>
+            <option value="mle_entropy" selected>Entropy of Hashtag Distribution</option>
+            <option value="tweeted_hashtags">Number of Tweeted Hashtags</option>
+            <option value="distinct_hashtags">Number of Distinct Hashtags</option>
+            <option value="top5000ratios">Missing Ratio of Top 5000 Hashtags</option>
 {% endblock %}
 
 {% block body %}
