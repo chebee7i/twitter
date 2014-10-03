@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block morehead %}
+        <script type="text/javascript">
+
+        var urlParams;
+        (window.onpopstate = function () {
+            var match,
+                pl     = /\+/g,  // Regex for replacing addition symbol with a space
+                search = /([^&=]+)=?([^&]*)/g,
+                decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+                query  = window.location.search.substring(1);
+
+            urlParams = {};
+            while (match = search.exec(query))
+               urlParams[decode(match[1])] = decode(match[2]);
+        })();
+
+        var center;
+        var initialLat;
+        var initialLong;
+        var dropMarker = false;
+        var property;
+        var color;
+        var grid = "square";
+
+        if (("lat" in urlParams) && ("long" in urlParams)) {
+            center = new google.maps.LatLng(urlParams["lat"], urlParams["long"]);
+            dropMarker = true;
+        } else {
+            // Center of USA
+            center = new google.maps.LatLng(39.833333, -98.583333);
+        }
+
+        if ("property" in urlParams) {
+            property = urlParams["property"];
+        } else {
+            property = "mle_entropy";
+        }
+
+        var mapOptions;
+        var map;
+
+        var defaultFeatureStyle = {
+            fillColor: 'black',
+            fillOpacity: 0,
+            strokeOpacity: .1,
+            strokeWeight: 1
+        };
+
+        function initialize() {
+            mapOptions = {
+                center: center,
+                zoom: 4
+            };
+
+            map = new google.maps.Map(document.getElementById("map-canvas"),
+                                          mapOptions);
+
+            // To add the marker to the map, use the 'map' property
+            if (dropMarker) {
+                var marker = new google.maps.Marker({
+                    position: center,
+                    map: map,
+                    title:"Hello World!"
+                });
+            }
+            $.when( $.getJSON("data/grids.squares.json"),
+                    $.getJSON("data/grids.squares.info.json") )
+                .then( function(squares, squaresInfo) {
+                        info = squaresInfo[0];
+                        updateColormap();
+                geoJsonObject = topojson.feature(squares[0], squares[0].objects.squares)
+                map.data.addGeoJson(geoJsonObject);
+
+                //map.data.setStyle(defaultFeatureStyle);
+                map.data.setStyle(function(feature) {
+                    var id = feature.getId();
+                    var props = info[id];
+                    if (typeof props == 'undefined') {
+                        return defaultFeatureStyle;
+                        } else {
+                        if (isNaN(props[property])) {
+                            var c = '#FF0000';
+                            } else {
+                            var c = colors(rescale(props[property]));
+                            }
+                        return {
+                            fillColor: c,
+                            fillOpacity: .5,
+                            strokeOpacity: .1,
+                            strokeWeight: 1
+                        };
+                    }
+                });
+                
+                }); 
+
+            map.data.addListener('mouseover', function(event) {
+                    var id = event.feature.getId();
+                    var props = info[id];
+                    if (typeof props != 'undefined') {
+                        $("#info").text(props["name"] + ' : ' + id + ' : ' + property + ' = ' + props[property]);
+                        map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
+                    }
+            });
+
+            map.data.addListener('mouseout', function(event) {
+                map.data.revertStyle();
+            });
+        }
+
+        google.maps.event.addDomListener(window, 'load', initialize);
+
+        </script>
+{% endblock %}
+
+{% block properties %}
+<!--<option value="area">Total Square Area</option>-->
+            <option value="mle_entropy" selected>Entropy of Hashtag Distribution</option>
+            <option value="tweeted_hashtags">Number of Tweeted Hashtags</option>
+            <option value="distinct_hashtags">Number of Distinct Hashtags</option>
+            <!--<option value="users">Number of Users</option>-->
+            <option value="top5000ratios">Missing Ratio of Top 5000 Hashtags</option>
+{% endblock %}
+
+{% block body %}
+      <div id="info">Squares</div>
+      <div id="map-canvas"></div>
+{% endblock %}

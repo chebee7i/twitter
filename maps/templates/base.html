@@ -42,8 +42,6 @@
         // All this is ugly and needs cleanup.
 
         var updateColormap = function() {
-            console.log('in updateColormap');
-            console.log(info);
             minmax = [rescale(info['min_'+grid][property]), rescale(info['max_'+grid][property])];
             domain = d3.scale.ordinal()
                 .domain(d3.range(9))
@@ -62,8 +60,13 @@
                 if (typeof props == 'undefined') {
                     return defaultFeatureStyle;
                 } else {
+                    if (isNaN(props[property])) {
+                        var c = '#FF0000';
+                    } else {
+                        var c = colors(rescale(props[property]));
+                    }
                     return {
-                        fillColor: colors(rescale(props[property])),
+                        fillColor: c,
                         fillOpacity: .5,
                         strokeOpacity: .1,
                         strokeWeight: 1
@@ -74,7 +77,9 @@
 
         $(document).ready( function() {
 
-        //$("#options").buttonset();
+                //$("#options").buttonset();
+
+        // We add one for log to keep it all positive since log(0) = -inf
         $("#options input:radio[name=scale]").change(function() {
             if ($("#radio1").is(":checked")) {
                 rescale = function(val) {
@@ -86,7 +91,7 @@
                 };
             } else {
                 rescale = function(val) {
-                    return Math.log(Math.log(1+val));
+                    return Math.log(1+Math.log(1+val));
                 };
             }
 

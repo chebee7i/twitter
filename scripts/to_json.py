@@ -46,6 +46,9 @@ def entropy(place):
     pmf = np.array( place['counts'].values(), dtype=float)
     pmf /= pmf.sum()
     H = dit.shannon.entropy_pmf(pmf)
+    # Handle NaN since json can't.
+    if np.isnan(H):
+        H = "NaN"
     return H
 
 def state_info():
@@ -72,11 +75,15 @@ def state_info():
         fips = state['fips']
         data[fips]['tweeted_hashtags'] = sum(state['counts'].values())
         data[fips]['distinct_hashtags'] = len(state['counts'])
+        # Handle nan since json can't.
+        H = entropy(state)
         data[fips]['mle_entropy'] = entropy(state)
 
     # Missing ratios
     ratios = json.load(open('top5000ratios_states.json'))
     for fips, ratio in ratios.items():
+        if np.isnan(ratio):
+            ratio = "NaN"
         data[fips]['top5000ratios'] = ratio
 
     # Take only the contiguous states and DC
@@ -141,6 +148,8 @@ def square_info():
     # Missing ratios
     ratios = json.load(open('top5000ratios_squares.json'))
     for idx, ratio in ratios.items():
+        if np.isnan(ratio):
+            ratio = "NaN"
         idx = int(idx)
         data[idx]['top5000ratios'] = ratio
 
@@ -154,8 +163,10 @@ def state_final():
                        p['tweeted_hashtags'],
                        p['distinct_hashtags'],
                        p['landarea'],
-                       p['mle_entropy'],
-                       p['top5000ratios']]
+                       p['mle_entropy']
+                        if p['mle_entropy']!='NaN' else np.nan,
+                       p['top5000ratios']
+                        if p['top5000ratios']!='NaN' else np.nan]
                        for p in state.values() ])
     norms = vals.sum(axis=0)
     mins = vals.min(axis=0)
@@ -213,8 +224,10 @@ def square_final():
     vals = np.array([ [ p['tweeted_hashtags'],
                         p['distinct_hashtags'],
                         #p['landarea'],
-                        p['mle_entropy'],
-                        p['top5000ratios'],
+                       p['mle_entropy']
+                        if p['mle_entropy']!='NaN' else np.nan,
+                       p['top5000ratios']
+                        if p['top5000ratios']!='NaN' else np.nan,
                       ]
                       for p in square.values() ])
     norms = np.nansum(vals, axis=0)
