@@ -21,7 +21,7 @@
         var dropMarker = false;
         var property;
         var color;
-        var grid = "county";
+        var grid = "counties";
 
         if (("lat" in urlParams) && ("long" in urlParams)) {
             center = new google.maps.LatLng(urlParams["lat"], urlParams["long"]);
@@ -43,8 +43,8 @@
         var defaultFeatureStyle = {
             fillColor: 'black',
             fillOpacity: 0,
-            strokeOpacity: 0,
-            strokeWeight: 0.2
+            strokeOpacity: 0.1,
+            strokeWeight: 1
         };
 
         function initialize() {
@@ -66,39 +66,19 @@
             }
 
             $.when( $.getJSON("data/us-2014-10m.json"),
-                    $.getJSON("data/state_county_info.json") )
+                    $.getJSON("data/names.json") )
                 .done( function(usdata, usinfo) {
                             info = usinfo[0];
-                            updateColormap(); 
-                            geoJsonObject = topojson.feature(usdata[0], usdata[0].objects.counties);
+                            geoJsonObject = topojson.feature(usdata[0], usdata[0].objects[grid]);
                             map.data.addGeoJson(geoJsonObject);
-
-                            /*
-                            map.data.setStyle(defaultFeatureStyle);
-                            */
-                            map.data.setStyle(function(feature) {
-                                var fips = feature.getId();
-                                var props = info[fips];
-                                if (typeof props == 'undefined') {
-                                    return defaultFeatureStyle;
-                                } else {
-                                    
-                                    return {
-                                        fillColor: colors(rescale(props[property])),
-                                        fillOpacity: .5,
-                                        strokeOpacity: .1,
-                                        strokeWeight: 1
-                                    };
-                                }
-                            });
-
+                            redraw();
                         });
 
             map.data.addListener('mouseover', function(event) {
-                    var fips = event.feature.getId();
-                    var props = info[fips];
-                    if (typeof props != 'undefined') {
-                        $("#info").text(props["name"] + ' : ' + fips + ' : ' + property + ' = ' + props[property]);
+                    var id = event.feature.getId();
+                    var props = info[id];
+                    if (typeof props !== 'undefined') {
+                        $("#info").text(props["name"] + ' : ' + id + ' : ' + property + ' = ' + propertyInfo[id]);
                         map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
                     }
             });
@@ -119,7 +99,7 @@
             <option value="mle_entropy" selected>Entropy of Hashtag Distribution</option>
             <option value="tweeted_hashtags">Number of Tweeted Hashtags</option>
             <option value="distinct_hashtags">Number of Distinct Hashtags</option>
-            <option value="top5000ratios">Missing Ratio of Top 5000 Hashtags</option>
+            <option value="top5000ratios">Included Ratio of Top 5000 Hashtags</option>
 {% endblock %}
 
 {% block body %}

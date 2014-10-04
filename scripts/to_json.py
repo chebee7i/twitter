@@ -1,32 +1,60 @@
 """
 Script to write a JSON file containing relevant meta information.
 
-Meta information for state and counties grids will be combined.
-Meta information for square grids will be in a separate file.
+Each grid type and property is stored in a separate file.
+Due to JSON not supporting NaN and Infinity, such values are
+converted into strings and then stored in JSON. The receiving
+code will need to handle those values appropriately.
 
-The JSON file will be a dict mapping a unique identifier to meta information
-for the cell of the grid.
+The JSON file will be a dict mapping a unique identifier to the property.
 
     states
-        id:
-            state fips, 2-str geoid from shapefile
-        properties:
-            2013 population est, land area, state name, state abbrev,
-            tweeted_hashtags, distinct_hashtags, mle_entropy
+        id: fips, 2-character string
 
     counties
-        id:
-            county fips, 5-str geoid from shapefile
-        properties:
-            2013 population est, land area, county name, state fips
-            tweeted hashtags, distinct hashtags, mle_entropy
+        id: geoid, 5-character string
 
-    square
-        id:
-            id from mongodb, specifying the ith cell in the enumeratation
-            from the llc of the bounding box
-        properties:
-            number of tweets, area of cell (not land area)
+    squares
+        id: _id, integer specifying the i^th cell in the enumeration
+        from the lower-left corner of the bounding box
+
+Properties:
+
+    demographics.json
+        state fips
+            name : state name
+            abbr : state abbreviation
+        county geoid
+            name  : county name
+            state : state fips
+
+    grids.states.bot_filtered.{property}.json
+    grids.counties.bot_filtered.{property}.json
+        Keyed by state fips or county geoid.
+
+        property                description
+        --------------------------------------------------------------------
+        respop72013             resident population 07/2013
+        landarea                total land area
+        tweeted_hashtags        the number of tweeted hashtags
+        distinct_hashtags       the number of distinct hashtags
+        users                   the number of users that tweeted in an area
+        mle_entropy             entropy of hashtag distribution
+        top5000ratios           missing ratios using top 5000 hashtags
+        topX70ratios            included ratios for top X=70% hashtags
+
+    grids.squares.bot_filtered.{property}.json
+        Keyed by cell id as string
+
+        property                description
+        ------------------------------------------------------------------
+        area                    total area (land+water)
+        tweeted_hashtags        the number of tweeted hashtags
+        distinct_hashtags       the number of distinct hashtags
+        users                   the number of users that tweeted in an area
+        mle_entropy             entropy of hashtag distribution
+        top5000ratios           missing ratios using top 5000 hashtags
+        topX70ratios            included ratios for top X=70% hashtags
 
 """
 from collections import OrderedDict, defaultdict
@@ -51,109 +79,208 @@ def entropy(place):
         H = "NaN"
     return H
 
-def state_info():
+def names():
+    # We use a single file for this one.
+
     data = defaultdict(dict)
 
-    # Grab geographic info
+    # The abbreviations of the contiguous states
+    desired = us.states.mapping('abbr', 'fips', us.STATES_CONTIGUOUS)
+
+    # States
     with fiona.open('../tiger/tl_2014_us_state.shp') as f:
         for state in f:
             state = state['properties']
             fips = state['STATEFP']
+            abbr = state['STUSPS']
+            if abbr not in desired:
+                continue
             data[fips]['name'] = state['NAME']
-            data[fips]['landarea'] = state['ALAND']
-            data[fips]['abbr'] = state['STUSPS']
+            data[fips]['abbr'] = abbr
 
-    # Grab demographic info
-    df = pandas.read_csv('../census/state/PEP_2013_PEPANNRES_with_ann.csv')
-    for state in df.values[1:]: # Skip column headers
-        fips = state[1]
-        data[fips]['respop72013'] = int(state[-1])
-
-    # Grab tweet info
-    db = twitterproj.connect()
-    for state in twitterproj.hashtag_counts__states(db, bot_filtered=True):
-        fips = state['fips']
-        data[fips]['tweeted_hashtags'] = sum(state['counts'].values())
-        data[fips]['distinct_hashtags'] = len(state['counts'])
-        # Handle nan since json can't.
-        H = entropy(state)
-        data[fips]['mle_entropy'] = entropy(state)
-
-    # Missing ratios
-    ratios = json.load(open('top5000ratios_states.json'))
-    for fips, ratio in ratios.items():
-        if np.isnan(ratio):
-            ratio = "NaN"
-        data[fips]['top5000ratios'] = ratio
-
-    # Take only the contiguous states and DC
-    states = OrderedDict()
-    for state in us.STATES_CONTIGUOUS:
-        fips = str(state.fips)
-        states[fips] = data[fips]
-
-    return states
-
-def county_info():
-    data = defaultdict(dict)
-
-    # Grab geographic info
+    # Counties
     with fiona.open('../tiger/tl_2014_us_county.shp') as f:
         for county in f:
             county = county['properties']
-            fips = county['GEOID']
-            data[fips]['name'] = county['NAMELSAD']
-            data[fips]['landarea'] = county['ALAND']
-            data[fips]['state'] = county['STATEFP']
+            # Keep only counties in contiguous states.
+            state_fips = county['STATEFP']
+            if state_fips not in data:
+                continue
+            geoid = county['GEOID']
+            data[geoid]['name'] = county['NAMELSAD']
+            data[geoid]['state'] = state_fips
 
-    # Grab demographic info
-    df = pandas.read_csv('../census/county/PEP_2013_PEPANNRES_with_ann.csv')
-    for county in df.values[1:]: # Skip column headers
-        fips = county[1]
-        data[fips]['respop72013'] = int(county[-1])
-
-    # Grab tweet info
-    db = twitterproj.connect()
-    for county in twitterproj.hashtag_counts__counties(db, bot_filtered=True):
-        fips = county['geoid']
-        data[fips]['tweeted_hashtags'] = sum(county['counts'].values())
-        data[fips]['distinct_hashtags'] = len(county['counts'])
-        data[fips]['mle_entropy'] = entropy(county)
-
-    # Missing ratios
-    ratios = json.load(open('top5000ratios_counties.json'))
-    for fips, ratio in ratios.items():
-        data[fips]['top5000ratios'] = ratio
-
-    # Take only the counties in the contiguous states and DC.
-    # The database only has these...so let's just loop through them again.
-    counties = OrderedDict()
-    for county in twitterproj.hashtag_counts__counties(db, bot_filtered=True):
-        fips = county['geoid']
-        counties[fips] = data[fips]
-
-    return counties
-
-def square_info():
-    data = defaultdict(dict)
-
-    # Grab tweet info
-    db = twitterproj.connect()
-    for square in db.grids.squares.bot_filtered.find():
-        idx = square['_id']
-        data[idx]['tweeted_hashtags'] = sum(square['counts'].values())
-        data[idx]['distinct_hashtags'] = len(square['counts'])
-        data[idx]['mle_entropy'] = entropy(square)
-
-    # Missing ratios
-    ratios = json.load(open('top5000ratios_squares.json'))
-    for idx, ratio in ratios.items():
-        if np.isnan(ratio):
-            ratio = "NaN"
-        idx = int(idx)
-        data[idx]['top5000ratios'] = ratio
+    with open('json/names.json', 'w') as f:
+        json.dump(data, f)
 
     return data
+
+def population():
+
+    # State
+    data_state = {}
+    df = pandas.read_csv('../census/state/PEP_2013_PEPANNRES_with_ann.csv')
+    for state in df.values[1:]: # Skip column headers
+        fips = state[1]
+        data_state[fips] = int(state[-1])
+
+    vals = np.array(data_state.values())
+    data_state['norm'] = vals.sum()
+    data_state['min'] = vals.min()
+    data_state['max'] = vals.max()
+
+    with open('json/grids.states.bot_filtered.respop72013.json', 'w') as f:
+        json.dump(data_state, f)
+
+    # County
+    data_county = {}
+    df = pandas.read_csv('../census/county/PEP_2013_PEPANNRES_with_ann.csv')
+    for county in df.values[1:]: # Skip column headers
+        geoid = county[1]
+        data_county[geoid] = int(county[-1])
+
+    vals = np.array(data_county.values())
+    data_county['norm'] = vals.sum()
+    data_county['min'] = vals.min()
+    data_county['max'] = vals.max()
+
+    with open('json/grids.counties.bot_filtered.respop72013.json', 'w') as f:
+        json.dump(data_county, f)
+
+    return data_state, data_county
+
+def landarea():
+
+    # The abbreviations of the contiguous states
+    desired = us.states.mapping('abbr', 'fips', us.STATES_CONTIGUOUS)
+
+    # State
+    data_state = {}
+    with fiona.open('../tiger/tl_2014_us_state.shp') as f:
+        for state in f:
+            state = state['properties']
+            fips = state['STATEFP']
+            abbr = state['STUSPS']
+            if abbr not in desired:
+                continue
+            data_state[fips] = state['ALAND']
+
+    vals = np.array(data_state.values())
+    data_state['norm'] = vals.sum()
+    data_state['min'] = vals.min()
+    data_state['max'] = vals.max()
+
+    with open('json/grids.states.bot_filtered.landarea.json', 'w') as f:
+        json.dump(data_state, f)
+
+    # County
+    data_county = {}
+    with fiona.open('../tiger/tl_2014_us_county.shp') as f:
+        for county in f:
+            county = county['properties']
+            # Keep only counties in contiguous states.
+            state_fips = county['STATEFP']
+            if state_fips not in data_state:
+                continue
+            geoid = county['GEOID']
+            data_county[geoid] = county['ALAND']
+
+    vals = np.array(data_county.values())
+    data_county['norm'] = vals.sum()
+    data_county['min'] = vals.min()
+    data_county['max'] = vals.max()
+
+    with open('json/grids.counties.bot_filtered.landarea.json', 'w') as f:
+        json.dump(data_county, f)
+
+    return data_state, data_county
+
+
+def hashtags_and_entropy():
+
+    db = twitterproj.connect()
+    collkeys = [
+        [twitterproj.hashtag_counts__states, 'fips'],
+        [twitterproj.hashtag_counts__counties, 'geoid'],
+        [twitterproj.hashtag_counts__squares, '_id'],
+    ]
+    # tweeted_hashtags, distint_hashtags, mle_entropy
+    # for state, counties, squares
+    dicts = [{}, {}, {}, {}, {}, {}, {}, {}, {}]
+
+    for i, (coll, key) in enumerate(collkeys):
+        print(coll)
+        for region in coll(db, bot_filtered=True):
+            region_id = region[key]
+            dicts[3*i + 0][region_id] = sum(region['counts'].values())
+            dicts[3*i + 1][region_id] = len(region['counts'])
+            dicts[3*i + 2][region_id] = entropy(region)
+
+    for i, data in enumerate(dicts):
+        if (i+1) % 3 == 0:
+            # This is an entropy dict
+            # Need to remap "NaN" to np.nan
+            vals = [v if v != 'NaN' else np.nan for v in data.values()]
+        else:
+            vals = data.values()
+        vals = np.array(vals)
+        data['norm'] = np.nansum(vals)
+        data['min'] = np.nanmin(vals)
+        data['max'] = np.nanmax(vals)
+
+    filenames = [
+        'json/grids.states.bot_filtered.tweeted_hashtags.json',
+        'json/grids.states.bot_filtered.distinct_hashtags.json',
+        'json/grids.states.bot_filtered.mle_entropy.json',
+        'json/grids.counties.bot_filtered.tweeted_hashtags.json',
+        'json/grids.counties.bot_filtered.distinct_hashtags.json',
+        'json/grids.counties.bot_filtered.mle_entropy.json',
+        'json/grids.squares.bot_filtered.tweeted_hashtags.json',
+        'json/grids.squares.bot_filtered.distinct_hashtags.json',
+        'json/grids.squares.bot_filtered.mle_entropy.json',
+    ]
+
+    for i, (fn, data) in enumerate(zip(filenames, dicts)):
+        with open(fn, 'w') as f:
+            json.dump(data, f)
+
+def top5000ratios():
+
+    filenames = [
+        'top5000ratios_states.json',
+        'top5000ratios_counties.json',
+        'top5000ratios_squares.json',
+    ]
+
+    data = [{}, {}, {}]
+    for i, filename in enumerate(filenames):
+        with open(filename) as f:
+            ratios = json.load(f)
+
+        for key, ratio in ratios.items():
+            # Store included ratio, not missing ratio
+            ratio = 1 - ratio
+
+            # Python allows NaN storage in json.
+            if np.isnan(ratio):
+                # Convert to string NaN for the web
+                ratio = "NaN"
+
+            data[i][key] = ratio
+
+        vals = ratios.values()
+        data[i]['norm'] = np.nansum(vals)
+        data[i]['min'] = np.nanmin(vals)
+        data[i]['max'] = np.nanmax(vals)
+
+    out_filenames = [
+        'json/grids.states.bot_filtered.top5000ratios.json',
+        'json/grids.counties.bot_filtered.top5000ratios.json',
+        'json/grids.squares.bot_filtered.top5000ratios.json',
+    ]
+    for data, outfn in zip(data, out_filenames):
+        with open(outfn, 'w') as f:
+            json.dump(data, f)
 
 def state_final():
     state = state_info()
@@ -248,15 +375,13 @@ def square_final():
                             'top5000ratios': maxs[3]};
     return square
 
-def state_and_county():
-    state = state_final()
-    county = county_final()
-    state.update(county)
-    return state
+def make_all():
+    names()
+    population()
+    landarea()
+    hashtags_and_entropy()
+    top5000ratios()
+
 
 if __name__ == '__main__':
-    #info = state_and_county()
-    #json.dump(info, open('state_county_info.json', 'w'))
-
-    info = square_final()
-    json.dump(info, open('grids.squares.info.json', 'w'))
+    top5000ratios()

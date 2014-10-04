@@ -21,7 +21,7 @@
         var dropMarker = false;
         var property;
         var color;
-        var grid = "square";
+        var grid = "squares";
 
         if (("lat" in urlParams) && ("long" in urlParams)) {
             center = new google.maps.LatLng(urlParams["lat"], urlParams["long"]);
@@ -29,6 +29,7 @@
         } else {
             // Center of USA
             center = new google.maps.LatLng(39.833333, -98.583333);
+
         }
 
         if ("property" in urlParams) {
@@ -64,44 +65,21 @@
                     title:"Hello World!"
                 });
             }
-            $.when( $.getJSON("data/grids.squares.json"),
-                    $.getJSON("data/grids.squares.info.json") )
-                .then( function(squares, squaresInfo) {
-                        info = squaresInfo[0];
-                        updateColormap();
-                geoJsonObject = topojson.feature(squares[0], squares[0].objects.squares)
-                map.data.addGeoJson(geoJsonObject);
-
-                //map.data.setStyle(defaultFeatureStyle);
-                map.data.setStyle(function(feature) {
-                    var id = feature.getId();
-                    var props = info[id];
-                    if (typeof props == 'undefined') {
-                        return defaultFeatureStyle;
-                        } else {
-                        if (isNaN(props[property])) {
-                            var c = '#FF0000';
-                            } else {
-                            var c = colors(rescale(props[property]));
-                            }
-                        return {
-                            fillColor: c,
-                            fillOpacity: .5,
-                            strokeOpacity: .1,
-                            strokeWeight: 1
-                        };
-                    }
-                });
-                
+        
+            $.when( $.getJSON("data/grids.squares.json") )
+                .done( function(squares) {
+                        // Behavior different when only one argument to $.when
+                    geoJsonObject = topojson.feature(squares, squares.objects[grid])
+                    map.data.addGeoJson(geoJsonObject);
+                    redraw();
+                    
                 }); 
 
             map.data.addListener('mouseover', function(event) {
                     var id = event.feature.getId();
-                    var props = info[id];
-                    if (typeof props != 'undefined') {
-                        $("#info").text(props["name"] + ' : ' + id + ' : ' + property + ' = ' + props[property]);
-                        map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
-                    }
+                    $("#info").text(id + ' : ' + property + ' = ' + propertyInfo[id]);
+                    map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
+                    
             });
 
             map.data.addListener('mouseout', function(event) {
@@ -120,7 +98,7 @@
             <option value="tweeted_hashtags">Number of Tweeted Hashtags</option>
             <option value="distinct_hashtags">Number of Distinct Hashtags</option>
             <!--<option value="users">Number of Users</option>-->
-            <option value="top5000ratios">Missing Ratio of Top 5000 Hashtags</option>
+            <option value="top5000ratios">Included Ratio of Top 5000 Hashtags</option>
 {% endblock %}
 
 {% block body %}

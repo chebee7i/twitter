@@ -33,16 +33,41 @@
 
         <script type="text/javascript">
         var property;
+        var propertyInfo;
         var rescale;
         var map;
         var colors;
         var grid;
         var domain;
         var info;
-        // All this is ugly and needs cleanup.
+        var cache = {};
+
+        var loadPropertyInfo = function(draw) {
+            if (typeof draw === 'undefined') {
+                draw = true;
+            }
+            propertyInfo = cache[property];
+            if (typeof propertyInfo === 'undefined') {
+                $.getJSON('data/grids.' + grid + '.bot_filtered.' + property + '.json',
+                    function (data) {
+                        cache[property] = data;
+                        propertyInfo = cache[property];
+
+                        if (draw) {
+                            redraw();
+                        }
+                    }
+                );
+            }
+            else {
+                if (draw) {
+                    redraw();
+                }
+            }
+        };
 
         var updateColormap = function() {
-            minmax = [rescale(info['min_'+grid][property]), rescale(info['max_'+grid][property])];
+            minmax = [rescale(propertyInfo['min']), rescale(propertyInfo['max'])];
             domain = d3.scale.ordinal()
                 .domain(d3.range(9))
                 .rangePoints(minmax,0)
@@ -50,20 +75,20 @@
             colors = d3.scale.linear()
                 .domain(domain)
                 .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
-        }
+        };
 
-        var redraw = function(map) {
+        var redraw = function() {
             updateColormap();
             map.data.setStyle(function(feature) {
                 var id = feature.getId();
-                var props = info[id];
-                if (typeof props == 'undefined') {
+                var val = propertyInfo[id];
+                if (typeof val === 'undefined') {
                     return defaultFeatureStyle;
                 } else {
-                    if (isNaN(props[property])) {
+                    if (isNaN(val)) {
                         var c = '#FF0000';
                     } else {
-                        var c = colors(rescale(props[property]));
+                        var c = colors(rescale(val));
                     }
                     return {
                         fillColor: c,
@@ -80,7 +105,10 @@
                 //$("#options").buttonset();
 
         // We add one for log to keep it all positive since log(0) = -inf
-        $("#options input:radio[name=scale]").change(function() {
+        $("#options input:radio[name=scale]").change(function(event, draw) {
+            if (typeof draw === 'undefined') {
+                draw = true;
+            }
             if ($("#radio1").is(":checked")) {
                 rescale = function(val) {
                     return val;
@@ -95,22 +123,24 @@
                 };
             }
 
-            if (typeof map != 'undefined') {
-                redraw(map);
+            if (typeof map !== 'undefined') {
+                if (draw) {
+                    redraw(map);
+                }
             }
         });
 
         $("#property").change(function() {
             property = $("#property").val();
-            if (typeof map != 'undefined') {
-                redraw(map);
+            if (typeof map !== 'undefined') {
+                loadPropertyInfo(true);
             }
         });
 
-        $("#options input:radio[name='scale']").trigger("change");
-        $
-
-
+        // Set rescale function but do not draw.
+        $("#options input:radio[name='scale']").trigger("change", [false]);
+        loadPropertyInfo();
+        
         });
         </script>
  
