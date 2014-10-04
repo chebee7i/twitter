@@ -272,6 +272,8 @@ def top5000ratios():
         data[i]['norm'] = np.nansum(vals)
         data[i]['min'] = np.nanmin(vals)
         data[i]['max'] = np.nanmax(vals)
+        data[i]['min'] = 0
+        data[i]['max'] = 1
 
     out_filenames = [
         'json/grids.states.bot_filtered.top5000ratios.json',
