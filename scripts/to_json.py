@@ -258,9 +258,6 @@ def top5000ratios():
             ratios = json.load(f)
 
         for key, ratio in ratios.items():
-            # Store included ratio, not missing ratio
-            ratio = 1 - ratio
-
             # Python allows NaN storage in json.
             if np.isnan(ratio):
                 # Convert to string NaN for the web
@@ -284,98 +281,43 @@ def top5000ratios():
         with open(outfn, 'w') as f:
             json.dump(data, f)
 
-def state_final():
-    state = state_info()
+def unionX():
+    db = twitterproj.connect()
+    collkeys = [
+        [twitterproj.hashtag_counts__states, 'fips', 'states'],
+        [twitterproj.hashtag_counts__counties, 'geoid', 'counties'],
+        [twitterproj.hashtag_counts__squares, '_id', 'squares'],
+    ]
 
-    # Now also provide normalization info
-    vals = np.array([ [p['respop72013'],
-                       p['tweeted_hashtags'],
-                       p['distinct_hashtags'],
-                       p['landarea'],
-                       p['mle_entropy']
-                        if p['mle_entropy']!='NaN' else np.nan,
-                       p['top5000ratios']
-                        if p['top5000ratios']!='NaN' else np.nan]
-                       for p in state.values() ])
-    norms = vals.sum(axis=0)
-    mins = vals.min(axis=0)
-    maxs = vals.max(axis=0)
-    state['norms_state'] = {'respop72013': norms[0],
-                            'tweeted_hashtags': norms[1],
-                            'landarea': norms[2]};
-    state['min_state'] = {'respop72013': mins[0],
-                          'tweeted_hashtags': mins[1],
-                          'distinct_hashtags': mins[2],
-                          'landarea': mins[3],
-                          'mle_entropy': mins[4],
-                          'top5000ratios': mins[5]};
-    state['max_state'] = {'respop72013': maxs[0],
-                          'tweeted_hashtags': maxs[1],
-                          'distinct_hashtags': maxs[2],
-                          'landarea': maxs[3],
-                          'mle_entropy': maxs[4],
-                          'top5000ratios': maxs[5]}
-    return state
+    Xvals = [.7, .8, .9]
+    for i, X in enumerate(Xvals):
+        print i, X
+        for region_iter, key, suffix in collkeys:
+            filename = 'json/grids.{}.bot_filtered.unionX{}.json'
+            filename = filename.format(suffix, int(X * 100))
+            print filename
 
-def county_final():
-    county = county_info()
-    # County
-    vals = np.array([ [p['respop72013'],
-                        p['tweeted_hashtags'],
-                        p['distinct_hashtags'],
-                        p['landarea'],
-                        p['mle_entropy'],
-                        p['top5000ratios'],]
-                      for p in county.values() ])
-    norms = vals.sum(axis=0)
-    mins = vals.min(axis=0)
-    maxs = vals.max(axis=0)
-    county['norms_county'] = {'respop72013': norms[0],
-                              'tweeted_hashtags': norms[1],
-                              'landarea': norms[2]}
-    county['min_county'] = {'respop72013': mins[0],
-                            'tweeted_hashtags': mins[1],
-                            'distinct_hashtags': mins[2],
-                            'landarea': mins[3],
-                            'mle_entropy': mins[4],
-                            'top5000ratios': mins[5]};
-    county['max_county'] = {'respop72013': maxs[0],
-                            'tweeted_hashtags': maxs[1],
-                            'distinct_hashtags': maxs[2],
-                            'landarea': maxs[3],
-                            'mle_entropy': maxs[4],
-                            'top5000ratios': maxs[5]};
-    return county
+            hashtags = twitterproj.sorted_hashtags_unionX(X, region_iter())
+            d = collections.OrderedDict()
+            norm = 0
+            for region in region_iter():
+                ratio, tagged = twitterproj.included_ratio(region['counts'],
+                                                           hashtags)
+                idx = region[key]
+                if np.isnan(ratio):
+                    ratio = "NaN"
+                else:
+                    norm += ratio
+                d[idx] = ratio
 
-def square_final():
-    square = square_info()
+                # Norm makes no sense for this...but whatever
+                d['norm'] = norm
+                d['min'] = 0
+                d['max'] = 1
 
-    vals = np.array([ [ p['tweeted_hashtags'],
-                        p['distinct_hashtags'],
-                        #p['landarea'],
-                       p['mle_entropy']
-                        if p['mle_entropy']!='NaN' else np.nan,
-                       p['top5000ratios']
-                        if p['top5000ratios']!='NaN' else np.nan,
-                      ]
-                      for p in square.values() ])
-    norms = np.nansum(vals, axis=0)
-    mins = np.nanmin(vals, axis=0)
-    maxs = np.nanmax(vals, axis=0)
-    square['norms_square'] = {'tweeted_hashtags': norms[0],
-                              #'landarea': norms[2]
-                             }
-    square['min_square'] = {'tweeted_hashtags': mins[0],
-                            'distinct_hashtags': mins[1],
-                            #'landarea': mins[3],
-                            'mle_entropy': mins[2],
-                            'top5000ratios': mins[3]};
-    square['max_square'] = {'tweeted_hashtags': maxs[0],
-                            'distinct_hashtags': maxs[1],
-                            #'landarea': maxs[3],
-                            'mle_entropy': maxs[2],
-                            'top5000ratios': maxs[3]};
-    return square
+            with open(filename, 'w') as fobj:
+                json.dump(d, fobj)
+
 
 def make_all():
     names()
@@ -383,7 +325,8 @@ def make_all():
     landarea()
     hashtags_and_entropy()
     top5000ratios()
-
+    unionX()
 
 if __name__ == '__main__':
-    top5000ratios()
+    #top5000ratios()
+    unionX()
