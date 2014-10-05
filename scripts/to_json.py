@@ -282,6 +282,9 @@ def top5000ratios():
             json.dump(data, f)
 
 def unionX():
+
+    # Takes at least 1 hour.
+
     db = twitterproj.connect()
     collkeys = [
         [twitterproj.hashtag_counts__states, 'fips', 'states'],
@@ -298,7 +301,7 @@ def unionX():
             print filename
 
             hashtags = twitterproj.sorted_hashtags_unionX(X, region_iter())
-            d = collections.OrderedDict()
+            d = OrderedDict()
             norm = 0
             for region in region_iter():
                 ratio, tagged = twitterproj.included_ratio(region['counts'],

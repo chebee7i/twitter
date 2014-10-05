@@ -107,7 +107,7 @@ def keep_X_hashtags(counts, X):
     sums = vals.cumsum()
     i = 0
     for i, s in enumerate(sums):
-        if i >= X:
+        if s >= X:
             break
     else:
         i += 1
