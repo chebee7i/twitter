@@ -2,13 +2,16 @@
 For each region, calculate the ratio of:
 
     the total number of hashtag mentions for hashtags appearing in the local
-    region's top N hashtags (ranked by local hashtag frequency) that do not
+    region's hashtags top N (ranked by local hashtag frequency) that also
     appear in the global top N hashtags (ranks by global hashtag frequency)
 
 to
 
     the total number of hashtag mentions for hashtags appearing in the local
-    region's top N hashtags (ranked by local hashtag frequency)
+    region's hashtags top N (ranked by local hashtag frequency)
+
+Note: N is the same locally and globally in this example.
+
 
 """
 from __future__ import print_function
@@ -23,13 +26,14 @@ collections = [(db.grids.squares.bot_filtered, '_squares', '_id'),
 hashtags = twitterproj.sorted_hashtags(bot_filtered=True)
 
 N = 5000
-func = twitterproj.region_missing_tophashtags
+hashtags = hashtags[:N]
+
+func = twitterproj.included_ratio
 for collection, suffix, key in collections:
     ratios = {}
     for region in collection.find():
         print(region[key])
-        tlmissing, tl = func(region, hashtags, N, N)
-        ratio = twitterproj.missing_ratio(tlmissing, tl)
+        ratio, tagged = func(region['counts'], hashtags, topN=N)
         ratios[region[key]] = ratio
 
     with open('top5000ratios' + suffix + '.json', 'w') as f:

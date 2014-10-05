@@ -246,11 +246,13 @@ def get_hashtag_counts(key, val, collection):
             hashtag_counts['counts'].update(doc['counts'])
     return hashtag_counts
 
-def hashtag_counts__states(db, bot_filtered=True):
+def hashtag_counts__states(db=None, bot_filtered=True):
     """
     Generator of hashtag counts for each contiguous "state".
 
     """
+    if db is None:
+        db = connect()
     if bot_filtered:
         collection = db.grids.states.bot_filtered
     else:
@@ -259,7 +261,7 @@ def hashtag_counts__states(db, bot_filtered=True):
     for state in states:
         yield get_hashtag_counts('abbrev', state.abbr, collection)
 
-def hashtag_counts__counties(db, state=None, bot_filtered=True,
+def hashtag_counts__counties(db=None, state=None, bot_filtered=True,
                               county_json=None):
     """
     Generator of hashtag counts for each county in the contiguous states.
@@ -267,13 +269,13 @@ def hashtag_counts__counties(db, state=None, bot_filtered=True,
     Optionally, filter by state abbreviation.
 
     """
+    if db is None:
+        db = connect()
     if bot_filtered:
         collection = db.grids.counties.bot_filtered
     else:
         collection = db.grids.counties
 
-    # Unlike the states collection, the db only contains counties that
-    # are in the lower 48+1 states.
     states = us.STATES_CONTIGUOUS
     counties = counties_from_json()
     fips_lookup = us.states.mapping('abbr', 'fips', states)
@@ -287,11 +289,13 @@ def hashtag_counts__counties(db, state=None, bot_filtered=True,
         for county in counties[state.fips]:
             yield get_hashtag_counts('geoid', county['GEOID'], collection)
 
-def hashtag_counts__squares(db, bot_filtered=True):
+def hashtag_counts__squares(db=None, bot_filtered=True):
     """
     Generator of hashtag counts for each square.
 
     """
+    if db is None:
+        db = connect()
     if bot_filtered:
         collection = db.grids.squares.bot_filtered
     else:
