@@ -11,13 +11,16 @@
             }
             #info {
                 padding:20px;
+                min-height: 40px;
             }
             #options {
                 font-size: 62.5%;
                 text-align:right;
                 float: right;
                 padding-right:10px;
-
+            }
+            #text1, #text2 {
+                text-align: right;
             }
         </style>
 
@@ -42,6 +45,20 @@
         var info;
         var cache = {};
 
+        var populateAutoLimits = function() {
+            var disable = false;
+            var autolimits = $("#options input:checkbox[name='autolimits']");
+            if (autolimits.prop("checked")) {
+                disable = true;
+            }
+            $("#options input:text[name='limits']").prop("disabled", disable);
+
+            if ((typeof propertyInfo !== 'undefined') && (disable)) {
+                $("#limits_min").val(propertyInfo['min']);
+                $("#limits_max").val(propertyInfo['max']);
+            }
+        }
+
         var loadPropertyInfo = function(draw) {
             if (typeof draw === 'undefined') {
                 draw = true;
@@ -52,7 +69,7 @@
                     function (data) {
                         cache[property] = data;
                         propertyInfo = cache[property];
-
+                        populateAutoLimits();
                         if (draw) {
                             redraw();
                         }
@@ -61,20 +78,27 @@
             }
             else {
                 if (draw) {
+                    populateAutoLimits();
                     redraw();
                 }
             }
+
         };
 
         var updateColormap = function() {
-            minmax = [rescale(propertyInfo['min']), rescale(propertyInfo['max'])];
-            domain = d3.scale.ordinal()
-                .domain(d3.range(9))
-                .rangePoints(minmax,0)
-                .range();
-            colors = d3.scale.linear()
-                .domain(domain)
-                .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
+            populateAutoLimits();
+            var min = parseFloat($("#limits_min").val());
+            var max = parseFloat($("#limits_max").val());
+            if ((typeof min !== 'undefined') && (typeof max !== 'undefined')) {
+                minmax = [rescale(min), rescale(max)];
+                domain = d3.scale.ordinal()
+                    .domain(d3.range(9))
+                    .rangePoints(minmax,0)
+                    .range();
+                colors = d3.scale.linear()
+                    .domain(domain)
+                    .range(["#fff7fb","#ece7f2","#d0d1e6","#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]);
+            }
         };
 
         var redraw = function() {
@@ -137,6 +161,14 @@
             }
         });
 
+        $("#options input:checkbox[name='autolimits']").change(function () {
+                populateAutoLimits();
+                redraw();
+        });
+        $("#options input:text[name='limits']").change(redraw);
+        // Set limit text boxes
+        populateAutoLimits();
+
         // Set rescale function but do not draw.
         $("#options input:radio[name='scale']").trigger("change", [false]);
         loadPropertyInfo();
@@ -157,6 +189,13 @@
         <input type="radio" id="radio1" name="scale" value="linear" checked><label for="radio1">Linear</label>
         <input type="radio" id="radio2" name="scale" value="log"><label for="radio2">Log</label>
         <input type="radio" id="radio3" name="scale" value="doublelog"><label for="radio3">Log Log</label>
+    <br>
+    Limits:
+        <input type="text" id="limits_min" name="limits" size="8">
+        <label for="limits_min">Min</label>
+        <input type="text" id="limits_max" name="limits" size="8">
+        <label for="limits_max">Max</label>
+        <input type="checkbox" id="checkbox1" name="autolimits" value="autolimits" checked><label for="checkbox1">Auto</label>
     </div>
     {% block body %}{% endblock %}
     </body>

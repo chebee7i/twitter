@@ -293,6 +293,12 @@ def unionX():
     ]
 
     Xvals = [.7, .8, .9]
+
+    #import sys
+    #args = map(int, sys.argv[1:3])
+    #collkeys = [ collkeys[args[0]] ]
+    #Xvals = [ Xvals[args[1]] ]
+
     for i, X in enumerate(Xvals):
         print i, X
         for region_iter, key, suffix in collkeys:
@@ -303,6 +309,8 @@ def unionX():
             hashtags = twitterproj.sorted_hashtags_unionX(X, region_iter())
             d = OrderedDict()
             norm = 0
+            ratio_min = np.inf
+            ratio_max = -np.inf
             for region in region_iter():
                 ratio, tagged = twitterproj.included_ratio(region['counts'],
                                                            hashtags)
@@ -310,13 +318,17 @@ def unionX():
                 if np.isnan(ratio):
                     ratio = "NaN"
                 else:
+                    if ratio < ratio_min:
+                        ratio_min = ratio
+                    if ratio > ratio_max:
+                        ratio_max = ratio
                     norm += ratio
                 d[idx] = ratio
 
                 # Norm makes no sense for this...but whatever
                 d['norm'] = norm
-                d['min'] = 0
-                d['max'] = 1
+                d['min'] = ratio_min
+                d['max'] = ratio_max
 
             with open(filename, 'w') as fobj:
                 json.dump(d, fobj)

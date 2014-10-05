@@ -109,9 +109,7 @@ def keep_X_hashtags(counts, X):
     for i, s in enumerate(sums):
         if s >= X:
             break
-    else:
-        i += 1
-    return counts.keys()[:i]
+    return counts.keys()[:i+1]
 
 def included_ratio(counts, hashtags, topN=None):
     """
