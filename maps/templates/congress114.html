@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block morehead %}
+        <script type="text/javascript">
+
+        var center;
+        var initialLat;
+        var initialLong;
+        var dropMarker = false;
+        var property;
+        var color;
+        var grid = "districts";
+
+        if (("lat" in urlParams) && ("long" in urlParams)) {
+            center = new google.maps.LatLng(urlParams["lat"], urlParams["long"]);
+            dropMarker = true;
+        } else {
+            // Center of USA
+            center = new google.maps.LatLng(39.833333, -98.583333);
+        }
+
+        if ("property" in urlParams) {
+            property = urlParams["property"];
+        } else {
+            property = "none";
+        }
+
+        var mapOptions;
+
+        var defaultFeatureStyle = {
+            fillColor: 'black',
+            fillOpacity: 0,
+            strokeOpacity: 0.1,
+            strokeWeight: 1
+        };
+
+        function initialize() {
+            mapOptions = {
+              center: center,
+              zoom: 4
+            };
+
+            map = new google.maps.Map(document.getElementById("map-canvas"),
+                                          mapOptions);
+
+            // To add the marker to the map, use the 'map' property
+            if (dropMarker) {
+                var marker = new google.maps.Marker({
+                    position: center,
+                    map: map,
+                    title:"Hello World!"
+                });
+            }
+
+            $.when( $.getJSON("data/cd114-2014-10m.json") )
+                .done( function(data) {
+                            info = {};
+                            geoJsonObject = topojson.feature(data, data.objects[grid]);
+                            map.data.addGeoJson(geoJsonObject);
+                            redraw();
+                        });
+
+            map.data.addListener('mouseover', function(event) {
+                    var id = event.feature.getId();
+                    var props = {};
+                    if (typeof props !== 'undefined') {
+                        $("#info").text(id);
+                        map.data.overrideStyle(event.feature, {strokeWeight: 2, strokeOpacity: 1});
+                    }
+            });
+
+            map.data.addListener('mouseout', function(event) {
+                map.data.revertStyle();
+            });
+
+        }
+
+      //google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+{% endblock %}
+
+{% block properties %}
+{% endblock %}
+
+{% block body %}
+      <div id="info">US 114th Congressional Districts</div>
+      <div id="map-canvas"></div>
+{% endblock %}
