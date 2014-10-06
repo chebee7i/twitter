@@ -37,8 +37,14 @@ def main():
     mkdir_p(build_dir)
     googlekey = get_google_key()
 
-    filenames = ['grid.html', 'counties.html', 'path.html', 'states.html',
-                 'squares.html']
+    filenames = [
+        'grid.html',
+        'counties.html',
+        'path.html',
+        'states.html',
+        'squares.html',
+        'congress114.html',
+    ]
     for filename in filenames:
         template = env.get_template(filename)
         with open(os.path.join(build_dir, filename), 'w') as f:

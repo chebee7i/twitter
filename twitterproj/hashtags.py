@@ -13,6 +13,7 @@ from .helpers import connect
 __all__ = [
     'sorted_hashtags',
     'sorted_hashtags_unionX',
+    'sorted_hashtags_unionXY',
     'region_sorted_hashtags',
     'keep_X_hashtags',
     'included_ratio',
@@ -44,7 +45,7 @@ def sorted_hashtags(bot_filtered=True, filename=None):
 
 def sorted_hashtags_unionX(X, region_iter, filename=None):
     """
-    Returns the union of hashtags over a grid, using they hashtags in each
+    Returns the union of hashtags over a grid, using the hashtags in each
     region that comprise at least X*100 percent of the hashtag counts within
     the region. The union is then sorted according to the global count.
 
@@ -59,6 +60,43 @@ def sorted_hashtags_unionX(X, region_iter, filename=None):
        keep = keep_X_hashtags(sorted_counts, X)
        for ht in keep:
            union[ht] += sorted_counts[ht]
+
+    out = union.items()
+    out.sort(key=key)
+    out = collections.OrderedDict(out)
+
+    if filename is not None:
+        with io.open(filename, 'w', encoding='utf-8') as f:
+            f.write("# hashtag,hashtag count\n")
+            lines = []
+            for hashtag, count in out.items():
+                line = "{},{}".format(hashtag, count)
+                lines.append(line)
+            f.write('\n'.join(lines))
+
+    return out
+
+def sorted_hashtags_unionXY(X, Y, region_iter, filename=None):
+    """
+    Returns the union of hashtags over a grid, using the hashtags in each
+    region that comprise at least X*100 percent of the hashtag counts within
+    the region. The union is then sorted according to the global count.
+    Only regions that had tweets from at least Y distinct users are
+    considered.
+
+    If this hashtag list is used to build distributions, then covereage in
+    each region of the grid will be at least X*100 percent, but probably higher
+    due to the union.
+
+    """
+    union = collections.defaultdict(int)
+    for region in region_iter:
+        if region['user_count'] < Y:
+            continue
+        sorted_counts = region_sorted_hashtags(region)
+        keep = keep_X_hashtags(sorted_counts, X)
+        for ht in keep:
+            union[ht] += sorted_counts[ht]
 
     out = union.items()
     out.sort(key=key)

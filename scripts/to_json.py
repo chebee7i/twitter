@@ -1,4 +1,5 @@
 """
+
 Script to write a JSON file containing relevant meta information.
 
 Each grid type and property is stored in a separate file.
@@ -269,8 +270,6 @@ def top5000ratios():
         data[i]['norm'] = np.nansum(vals)
         data[i]['min'] = np.nanmin(vals)
         data[i]['max'] = np.nanmax(vals)
-        data[i]['min'] = 0
-        data[i]['max'] = 1
 
     out_filenames = [
         'json/grids.states.bot_filtered.top5000ratios.json',
@@ -333,6 +332,256 @@ def unionX():
             with open(filename, 'w') as fobj:
                 json.dump(d, fobj)
 
+def unionXY():
+
+    # Takes at least 1 hour.
+
+    db = twitterproj.connect()
+    collkeys = [
+        [twitterproj.hashtag_counts__states, 'fips', 'states'],
+        [twitterproj.hashtag_counts__counties, 'geoid', 'counties'],
+        [twitterproj.hashtag_counts__squares, '_id', 'squares'],
+    ]
+
+    Xvals = [.7, .8, .9]
+    Yvals = [ 100, 1000, 5000]
+    #import sys
+    #args = map(int, sys.argv[1:3])
+    #collkeys = [ collkeys[args[0]] ]
+    #Xvals = [ Xvals[args[1]] ]
+
+    for i, X in enumerate(Xvals):
+        for j, Y in enumerate(Yvals):
+            print i, X
+            for region_iter, key, suffix in collkeys:
+                filename = 'json/grids.{}.bot_filtered.unionX{}_Y{}.json'
+                filename = filename.format(suffix, int(X * 100), Y)
+                print filename
+
+                hashtags = twitterproj.sorted_hashtags_unionXY(X, Y, region_iter())
+                d = OrderedDict()
+                norm = 0
+                ratio_min = np.inf
+                ratio_max = -np.inf
+                for region in region_iter():
+                    ratio, tagged = twitterproj.included_ratio(region['counts'],
+                                                               hashtags)
+                    idx = region[key]
+                    if np.isnan(ratio):
+                        ratio = "NaN"
+                    else:
+                        if ratio < ratio_min:
+                            ratio_min = ratio
+                        if ratio > ratio_max:
+                            ratio_max = ratio
+                        norm += ratio
+                    d[idx] = ratio
+
+                    # Norm makes no sense for this...but whatever
+                    d['norm'] = norm
+                    d['min'] = ratio_min
+                    d['max'] = ratio_max
+
+                with open(filename, 'w') as fobj:
+                    json.dump(d, fobj)
+
+
+def users():
+    db = twitterproj.connect()
+
+    filenames = [
+        'json/grids.states.bot_filtered.users.json',
+        'json/grids.counties.bot_filtered.users.json',
+        'json/grids.squares.bot_filtered.users.json',
+    ]
+
+    skip_users = set(twitterproj.subcollections.get_skip_users())
+    counts = [OrderedDict(), OrderedDict(), OrderedDict()]
+
+    def user_states():
+        # States
+        # The abbreviations of the contiguous states
+        desired = us.states.mapping('abbr', 'fips', us.STATES_CONTIGUOUS)
+
+        with fiona.open('../tiger/tl_2014_us_state.shp') as f:
+            for state in f:
+                users = set([])
+                fips = state['properties']['STATEFP']
+                abbr = state['properties']['STUSPS']
+                if abbr not in desired:
+                    continue
+                for tweet in twitterproj.tweets_in_region(db.tweets.with_hashtags,
+                                                          state['geometry']):
+                    userid = tweet['user']['id']
+                    if userid not in skip_users:
+                        users.add(userid)
+                else:
+                    counts[0][fips] = len(users)
+                    print(fips, counts[0][fips])
+
+    def user_counties():
+        # Counties
+        geoids = db.grids.counties.bot_filtered.find({}, {'geoid': True})
+        geoids = [g['geoid'] for g in geoids]
+        geoids = set(geoids)
+        with fiona.open('../tiger/tl_2014_us_county.shp') as f:
+            for region in f:
+                users = set([])
+                key = region['properties']['GEOID']
+                if key not in geoids:
+                    continue
+                for tweet in twitterproj.tweets_in_region(db.tweets.with_hashtags,
+                                                          region['geometry']):
+                    userid = tweet['user']['id']
+                    if userid not in skip_users:
+                        users.add(userid)
+                else:
+                    counts[1][key] = len(users)
+                    print(key, counts[1][key])
+
+    def user_squares():
+        # Squares
+        for i, region in enumerate(twitterproj.hashtag_counts__squares()):
+            users = set([])
+            key = region['_id']
+            for tweet in twitterproj.tweets_in_region(db.tweets.with_hashtags,
+                                                      region['geometry']):
+                userid = tweet['user']['id']
+                if userid not in skip_users:
+                    users.add(userid)
+            else:
+                counts[2][key] = len(users)
+                print(key, counts[2][key])
+
+    hack = None
+    """
+    import sys
+    hack = int(sys.argv[1])
+    if hack == 0:
+        print "States"
+        user_states()
+    elif hack == 1:
+        print "Counties"
+        user_counties()
+    else:
+        print "Squares"
+        user_squares()
+
+    if hack is not None:
+        filenames = [filenames[hack]]
+        counts = [counts[hack]]
+
+    """
+
+    for i, data in enumerate(counts):
+        vals = data.values()
+        vals = np.array(vals)
+        data['norm'] = np.nansum(vals)
+        data['min'] = np.nanmin(vals)
+        data['max'] = np.nanmax(vals)
+
+    for i, (fn, data) in enumerate(zip(filenames, counts)):
+        with open(fn, 'w') as f:
+            json.dump(data, f)
+
+
+def count_ratio():
+    """
+    Probabilities are "decent" so long as
+
+        L_max(N) < log(tweeted hashtags) /  log(distinct hashtags)
+
+    where L_max(N) is the maximum length (in time) of words we want to
+    look at probabilities for. Since we just want hashtag distributions,
+    this is L=1. So we need the log ratio to be greater than 1, preferably
+    by a lot.
+
+    See page 5 of http://arxiv.org/pdf/cs/0406011v1.pdf.
+
+    """
+    db = twitterproj.connect()
+    collkeys = [
+        [twitterproj.hashtag_counts__states, 'fips'],
+        [twitterproj.hashtag_counts__counties, 'geoid'],
+        [twitterproj.hashtag_counts__squares, '_id'],
+    ]
+    dicts = [{}, {}, {}]
+
+    for i, (coll, key) in enumerate(collkeys):
+        print(coll)
+        ratios = []
+        for region in coll(db, bot_filtered=True):
+            region_id = region[key]
+            if len(region['counts']):
+                total = np.sum(region['counts'].values())
+                # Add 1 to prevent -inf ratios.
+                denom = np.log2(1 + len(region['counts']))
+                ratio = np.log2(total) / denom
+                ratios.append(ratio)
+            else:
+                ratio = "NaN"
+
+            dicts[i][region_id] = ratio
+
+        ratios = np.array(ratios)
+        dicts[i]['norm'] = np.nansum(ratios)
+        dicts[i]['min'] = np.nanmin(ratios)
+        dicts[i]['max'] = np.nanmax(ratios)
+
+    filenames = [
+        'json/grids.states.bot_filtered.countratio.json',
+        'json/grids.counties.bot_filtered.countratio.json',
+        'json/grids.squares.bot_filtered.countratio.json',
+    ]
+
+    for i, (fn, data) in enumerate(zip(filenames, dicts)):
+        with open(fn, 'w') as f:
+            json.dump(data, f)
+
+def low_count_ratio(n=10):
+    """
+    Ratio of distinct hashtags with counts less than `n`.
+
+    """
+    db = twitterproj.connect()
+    collkeys = [
+        [twitterproj.hashtag_counts__states, 'fips'],
+        [twitterproj.hashtag_counts__counties, 'geoid'],
+        [twitterproj.hashtag_counts__squares, '_id'],
+    ]
+    dicts = [{}, {}, {}]
+
+    for i, (coll, key) in enumerate(collkeys):
+        print(coll)
+        ratios = []
+        for region in coll(db, bot_filtered=True):
+            region_id = region[key]
+            if len(region['counts']):
+                low = sum([1 for c in region['counts'].values() if c < n])
+                ratio = float(low) / len(region['counts'])
+                ratios.append(ratio)
+            else:
+                ratio = "NaN"
+
+            dicts[i][region_id] = ratio
+
+        ratios = np.array(ratios)
+        dicts[i]['norm'] = np.nansum(ratios)
+        dicts[i]['min'] = np.nanmin(ratios)
+        dicts[i]['max'] = np.nanmax(ratios)
+
+    filenames = [
+        'json/grids.states.bot_filtered.low10_countratio.json',
+        'json/grids.counties.bot_filtered.low10_countratio.json',
+        'json/grids.squares.bot_filtered.low10_countratio.json',
+    ]
+
+    for i, (fn, data) in enumerate(zip(filenames, dicts)):
+        with open(fn, 'w') as f:
+            json.dump(data, f)
+
+
+
 
 def make_all():
     names()
@@ -341,7 +590,12 @@ def make_all():
     hashtags_and_entropy()
     top5000ratios()
     unionX()
+    users()
+    countratio()
+    low_countratio()
 
 if __name__ == '__main__':
     #top5000ratios()
-    unionX()
+    #users()
+    #low_count_ratio()
+    unionXY()

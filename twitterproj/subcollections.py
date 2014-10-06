@@ -27,6 +27,7 @@ def counties_from_json(filename=None):
     """
     Extract county information by state FIPS code from JSON file.
 
+    OLD: Probably not needed anymore.
     """
     if filename is None:
         # Ugly hack for now.
@@ -153,7 +154,6 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
     ...
 
     """
-
     # ../tiger/tl_2014_us_state.shp
     hci = hashtag_counts_in
 
@@ -161,10 +161,10 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
     skips = {}
 
     # The abbreviations of the contiguous states
-    desired = us.states.mapping('abbr', 'fips', us.STATES_CONTIGUOUS)
-
-    if not dry_run:
-        state_collection.drop()
+    desired = us.states.mapping('fips', 'abbr', us.STATES_CONTIGUOUS)
+    desired = ['06']
+    #if not dry_run:
+    #    state_collection.drop()
     with fiona.open(shpfile, 'r') as f:
         out = {}
         for i, feature in enumerate(f):
@@ -185,6 +185,7 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
             doc['fips'] = feature['properties']['STATEFP']
             doc['abbrev'] = feature['properties']['STUSPS']
             doc['landarea'] = feature['properties']['ALAND']
+            doc['user_count'] = 395484
             if dry_run:
                 continue
 
