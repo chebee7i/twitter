@@ -538,27 +538,42 @@ def count_ratio():
         with open(fn, 'w') as f:
             json.dump(data, f)
 
-def low_count_ratio(n=10):
+def low_count_ratio(n=10, collection=None, hashtags=None, suffix=''):
     """
     Ratio of distinct hashtags with counts less than `n`.
 
     """
     db = twitterproj.connect()
-    collkeys = [
-        [twitterproj.hashtag_counts__states, 'fips'],
-        [twitterproj.hashtag_counts__counties, 'geoid'],
-        [twitterproj.hashtag_counts__squares, '_id'],
-    ]
-    dicts = [{}, {}, {}]
 
-    for i, (coll, key) in enumerate(collkeys):
+    if hashtags is not None:
+        hashtags = set(hashtags)
+
+    collindex = {
+        'states': [twitterproj.hashtag_counts__states, 'fips'],
+        'counties': [twitterproj.hashtag_counts__counties, 'geoid'],
+        'squares': [twitterproj.hashtag_counts__squares, '_id'],
+    }
+    if collection is None:
+        collections = collindex.values()
+    else:
+        collections = [collindex[collection]]
+
+    dicts = [{}, {}, {}]
+    for i, (coll, key) in enumerate(collections):
         print(coll)
         ratios = []
         for region in coll(db, bot_filtered=True):
             region_id = region[key]
             if len(region['counts']):
-                low = sum([1 for c in region['counts'].values() if c < n])
-                ratio = float(low) / len(region['counts'])
+                if hashtags is None:
+                    low = sum([1 for ht, c in region['counts'].items()
+                               if c < n])
+                    norm = len(region['counts'])
+                else:
+                    low = sum([1 for ht, c in region['counts'].items()
+                               if c < n and ht in hashtags])
+                    norm = len([ht for ht in region['counts'] if ht in hashtags])
+                ratio = float(low) / norm
                 ratios.append(ratio)
             else:
                 ratio = "NaN"
@@ -570,18 +585,22 @@ def low_count_ratio(n=10):
         dicts[i]['min'] = np.nanmin(ratios)
         dicts[i]['max'] = np.nanmax(ratios)
 
-    filenames = [
-        'json/grids.states.bot_filtered.low10_countratio.json',
-        'json/grids.counties.bot_filtered.low10_countratio.json',
-        'json/grids.squares.bot_filtered.low10_countratio.json',
-    ]
+    filenames = OrderedDict([
+        ('states', 'json/grids.states.bot_filtered.low{}_countratio{}.json'),
+        ('counties', 'json/grids.counties.bot_filtered.low{}_countratio{}.json'),
+        ('squares', 'json/grids.squares.bot_filtered.low{}_countratio{}.json'),
+    ])
+
+    if len(collections) == 1:
+        filenames = [filenames[collection]]
+        dicts = [dicts[0]]
+    else:
+        filenames = filenames.values()
 
     for i, (fn, data) in enumerate(zip(filenames, dicts)):
+        fn = fn.format(n, suffix)
         with open(fn, 'w') as f:
             json.dump(data, f)
-
-
-
 
 def make_all():
     names()
@@ -592,10 +611,35 @@ def make_all():
     unionX()
     users()
     countratio()
-    low_countratio()
+    low_count_ratio()
+
+def get_hashtags_from_file(filename):
+    hashtags = pandas.read_csv(filename)
+    hashtags = list(hashtags['# hashtag'])
+    return hashtags
+
+
 
 if __name__ == '__main__':
     #top5000ratios()
     #users()
-    #low_count_ratio()
-    unionXY()
+    low_count_ratio(2, collection='counties')
+    #unionXY()
+    """
+    fileno = [14,16,18]
+    filefamily = ['states','counties','squares']
+    basename = 'unionX/unionX_{}_{}.txt'
+    for number in fileno:
+        for family in filefamily:
+            filename = basename.format(family, number)
+            hashtags = get_hashtags_from_file(filename)
+            low_count_ratio(
+                n=2,
+                collection=family,
+                hashtags=hashtags,
+                suffix='_unionX{}'.format(number)
+            )
+            print(number,family)
+
+    """
+
