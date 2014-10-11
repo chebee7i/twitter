@@ -7,6 +7,11 @@ import pymongo
 import twitterproj
 
 def via_json():
+
+    raise Exception("""This script doesn't work for states because CA has two
+documents. Fix this!""")
+
+
     json_files = [
         'json/grids.states.bot_filtered.users.json',
         'json/grids.counties.bot_filtered.users.json',
