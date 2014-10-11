@@ -107,6 +107,7 @@ def build_hashtag_counts_by_county(tweet_collection, county_collection, shpfile,
             doc['county_fips'] = feature['properties']['COUNTYFP']
             doc['geoid'] = feature['properties']['GEOID']
             doc['landarea'] = feature['properties']['ALAND']
+            doc['geometry'] = geometry
             if dry_run:
                 continue
 
@@ -162,9 +163,8 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
 
     # The abbreviations of the contiguous states
     desired = us.states.mapping('fips', 'abbr', us.STATES_CONTIGUOUS)
-    desired = ['06']
-    #if not dry_run:
-    #    state_collection.drop()
+    if not dry_run:
+        state_collection.drop()
     with fiona.open(shpfile, 'r') as f:
         out = {}
         for i, feature in enumerate(f):
@@ -185,7 +185,7 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
             doc['fips'] = feature['properties']['STATEFP']
             doc['abbrev'] = feature['properties']['STUSPS']
             doc['landarea'] = feature['properties']['ALAND']
-            doc['user_count'] = 395484
+            doc['geometry'] = geometry
             if dry_run:
                 continue
 
