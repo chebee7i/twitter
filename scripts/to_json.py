@@ -484,7 +484,6 @@ def users():
         with open(fn, 'w') as f:
             json.dump(data, f)
 
-
 def count_ratio():
     """
     Probabilities are "decent" so long as
