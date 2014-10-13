@@ -44,6 +44,7 @@ def main():
         'states.html',
         'squares.html',
         'congress114.html',
+        'hashtags.html',
     ]
     for filename in filenames:
         template = env.get_template(filename)
@@ -52,6 +53,9 @@ def main():
 
     data_dir = os.path.join(MAPSPATH, 'data')
     subprocess.call('cp -r {} {}/'.format(data_dir, build_dir), shell=True)
+
+    swf_dir = os.path.join(MAPSPATH, 'swf')
+    subprocess.call('cp -r {} {}/'.format(swf_dir, build_dir), shell=True)
 
 if __name__ == '__main__':
     main()

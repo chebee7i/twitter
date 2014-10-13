@@ -1,0 +1,84 @@
+<html>
+
+<head>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+
+    <!-- DataTables -->
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.js"></script>
+
+    <!-- TableTools -->
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/tabletools/2.2.3/css/dataTables.tableTools.css">
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/tabletools/2.2.3/js/dataTables.tableTools.min.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#hashtags_botFiltered').dataTable( {
+                ajax: 'data/hashtags_min500_botFiltered.json',
+                dom: 'T<"clear">lfrtip',
+                tableTools: {
+                    "sSwfPath": "swf/copy_csv_xls.swf",
+                    "aButtons": [ "copy", "csv", "xls", "print" ]
+                }
+            } );
+
+            $('#hashtags').dataTable( {
+                ajax: 'data/hashtags_min500.json',
+                dom: 'T<"clear">lfrtip',
+                tableTools: {
+                    "sSwfPath": "swf/copy_csv_xls.swf",
+                    "aButtons": [ "copy", "csv", "xls", "print" ]
+                }
+            } );
+        } );
+    </script>
+
+</head>
+
+<body>
+Tables for hashtags, the number of times a hashtag was tweeted,
+and the number of users that tweeted the hashtag. Results are
+limited to hashtags that had at least 500 users.
+
+<h1>Bot-filtered Hashtags</h1>
+<table id="hashtags_botFiltered" class="display">
+    <thead>
+        <tr>
+            <th>Hashtag</th>
+            <th>Hashtag Count</th>
+            <th>Hashtag Users</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>Hashtag</th>
+            <th>Hashtag Count</th>
+            <th>Hashtag Users</th>
+        </tr>
+    </tfoot>
+</table>
+
+<h1>(Unfiltered) Hashtags</h1>
+<table id="hashtags" class="display">
+    <thead>
+        <tr>
+            <th>Hashtag</th>
+            <th>Hashtag Count</th>
+            <th>Hashtag Users</th>
+        </tr>
+    </thead>
+    </tfoot>
+        <tr>
+            <th>Hashtag</th>
+            <th>Hashtag Count</th>
+            <th>Hashtag Users</th>
+        </tr>
+    </tfoot>
+</table>
+
+</body>
+
+</html>
