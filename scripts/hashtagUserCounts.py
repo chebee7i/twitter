@@ -34,7 +34,7 @@ def add_user_counts(bot_filtered=True):
                       {"$set": {'user_count': len(users[hashtag])}},
                       upsert=False)
 
-def to_json(filename, bot_filtered=True):
+def to_json(filename, mincount=1000, bot_filtered=True):
 
     if bot_filtered:
         collection = db.hashtags.bot_filtered
@@ -42,7 +42,11 @@ def to_json(filename, bot_filtered=True):
         collection = db.hashtags
 
     rows = []
-    for doc in collection.find():
+    if mincount is not None:
+        it = collection.find({'user_count': {'$gte': mincount}})
+    else:
+        it = colelction.find()
+    for doc in it:
         row = [doc['_id'], doc['count'], doc['user_count']]
         rows.append(row)
 
