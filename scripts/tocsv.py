@@ -87,10 +87,7 @@ def counts_csv(what, hashtags, filename, bot_filtered=True):
     elif what == 'counties':
         it = twitterproj.hashtag_counts__counties(db, bot_filtered=bot_filtered)
     elif what == 'squares':
-        if bot_filtered:
-            it = db.grids.squares.bot_filtered.find()
-        else:
-            it = db.grids.squares.find()
+        it = twitterproj.hashtag_counts__squares(db, bot_filtered=bot_filtered)
 
     lines = []
     for region in it:
@@ -117,4 +114,22 @@ def writeall_csv():
     csv_counties('grids/counties' + tail)
     csv_squares('grids/squares' + tail)
 
+def writeall_csv_minusers(mincount=None):
+    mkdir_p('grids_minUsers')
+
+    db = twitterproj.connect()
+    collection = db.hashtags.bot_filtered
+    bot_filtered = True
+    if mincount is not None:
+        it = collection.find({'user_count': {'$gte': mincount}})
+    else:
+        it = colelction.find()
+    it = it.sort('user_count', pymongo.DESCENDING)
+
+    hashtags = [ht['_id'] for ht in it]
+    counts_csv('squares', hashtags, 'grids_minUsers/squares_min{0}users.csv'.format(mincount), bot_filtered)
+    counts_csv('counties', hashtags, 'grids_minUsers/counties_min{0}users.csv'.format(mincount), bot_filtered)
+
+    #csv_counties('grids_minUsers/counties.csv')
+    #csv_squares('grids_minUsers/squares.csv')
 
