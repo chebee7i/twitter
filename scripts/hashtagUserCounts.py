@@ -99,7 +99,7 @@ Each line of that file contains 3 pieces of information, separated by commas:
 Lines are sorted, descendingly, according to column 3.
 Counts are tabulated wrt geotagged tweets in the contiguous states.
 {2}
-Hashtags were included only if the were tweeted by at least {3} users.
+Hashtags were included only if they were tweeted by at least {3} users across all regions.
 """
     if bot_filtered:
         text = 'Tweets from users determined to be robots were excluded from the counting process.'
@@ -118,5 +118,5 @@ Hashtags were included only if the were tweeted by at least {3} users.
                     break
                 row = [doc['_id'], str(doc['count']), str(doc['user_count'])]
                 rows.append(','.join(row))
-            fobj.write('\n'.join(rows))
-
+            fobj.write(u'\n'.join(rows))
+            fobj.write(u'\n') # So groups are separated.
