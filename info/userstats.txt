@@ -33,3 +33,11 @@ The 1000th most active user had around 1200 tweets...so this is somewhere betwee
 
 [The 3000th most active user is still over 500 tweets...just under 99th percentile!] 
 
+
+db.tweets.with_hashtags.aggregate([{"$limit": 2000000}, {"$project": {"_id": 1, "numHashtags": {"$size": "$hashtags"}}}, {"$group": {"_id": None, "avgNumHashtags": {"$avg": "$numHashtags"}}}])
+
+{u'ok': 1.0,
+ u'result': [{u'_id': None, u'avgNumHashtags': 1.8395888866966819}]}
+
+
+

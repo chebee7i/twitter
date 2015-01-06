@@ -251,6 +251,7 @@ def extract(tweet):
 
     data = [
         ('created_at', tweet_dt),
+        ('id_str', tweet['id_str']),
         ('coordinates', tweet['coordinates']['coordinates']),
         ('hashtags', get_hashtags(tweet)),
         ('text', tweet['text']),
