@@ -11,6 +11,14 @@ __all__ = [
     'user_counts_in',
 ]
 
+seattle = [
+    [[-122.4596959,47.4810022],
+     [-122.4596959,47.7341388],
+     [-122.2244329,47.7341388],
+     [-122.2244329,47.4810022],
+     [-122.4596959,47.4810022]],
+]
+
 def tweets_in_region(collection, geometry):
     """Iterator over tweets in a region.
 

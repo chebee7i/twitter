@@ -12,7 +12,7 @@ import json
 import us
 import os
 
-from .geo import hashtag_counts_in
+from .geo import hashtag_counts_in, tweets_in_region
 from .helpers import connect
 
 __all__ = [
@@ -309,5 +309,172 @@ def hashtag_counts__squares(db=None, bot_filtered=True):
     ids.sort()
     for _id in ids:
         yield collection.find({'_id': _id}).next()
+
+def build_userstats_by_county(tweet_collection, county_collection, shpfile,
+                              skip_users=None, dry_run=True, mod_filter=None):
+    """
+    Builds a collection of user stats within each county.
+    All tweets are partitioned by county.
+
+    The created collection will consist of documents with the following
+    information, which applies per user within the region.
+
+        state_fips : The state fips of the county
+        county_fips : The county fips
+        geoid : The state-county fips code
+        user_id : The user id
+        numHashtags : Total number of hashtags that were tweeted
+        numHashtagsUnique : Number of distinct hashtags that were tweeted
+        hashtags : List of unordered, tweeted hashtags, with repeats
+        numTweets : Total number of tweets
+        numTweetsWithHashtags: Total number of tweets with hashtags
+
+    The following correspond to to each other, but they are not
+    chronologically ordered. The should simply be extended by
+    other counts from user tweets in other regions. Using the statuses
+    count may allow one to order the elements.
+
+        followers_count : The number of followers at each tweet
+        friends_count : The number of friends at each tweet
+        favourites_count: The number of favourited statuses at each tweet
+        statuses_count: The number of statuses at each tweet
+
+    Note that the statuses_count can be used to get a better sense of how many
+    tweets we have missed from the users. This total number combined with the
+    ratio of numTweetsWithHashtags/numTweets can be used to estimate the number
+    of tweets with hashtags that we missed, with some assumptions about a fixed
+    ratio of geotagged tweets from the user.
+
+    Parameters
+    ----------
+    tweet_collection :
+        The collection containing the tweets to partition.
+    county_collection :
+        This is where the user stats will be stored.
+        It will be emptied if dry_run is False.
+    shpfile :
+        This is the shapefile that contains county information.
+        In particular, it must contain the geometry of the county.
+    skip_users :
+        The set of user ids to skip.
+        For the current db, this is an iterable of ints.
+        For the future, it should be an iterable of strings,
+        and then we will query id_str, instead of id.
+    dry_run : bool
+        If True, then we only extract and build the stats, but nothing
+        is saved to the collection.
+
+    Returns
+    -------
+    skips : dict
+        The total number of skipped tweets in each region by name.
+        This is mostly informational. The name is not a useful key.
+
+    """
+    # ../tiger/tl_2014_us_county.shp
+    hci = hashtag_counts_in
+
+    all_skipped = 0
+    skips = {}
+
+    fips = set([state.fips for state in us.STATES_CONTIGUOUS])
+    mapping = us.states.mapping('fips', 'name')
+
+#    if not dry_run:
+#        county_collection.drop()
+
+    with fiona.open(shpfile, 'r') as f:
+        for i, feature in enumerate(f):
+
+            if i == 397:
+                continue
+
+            if mod_filter is not None and i % 10 != mod_filter:
+                continue
+
+            # This holds the documents for each user in the region.
+            docs = defaultdict(OrderedDict)
+
+            # Content common to every document.
+            state_fips = feature['properties']['STATEFP']
+            county_fips = feature['properties']['COUNTYFP']
+            geoid = feature['properties']['GEOID']
+
+            if state_fips not in fips:
+                # Consider only counties in the contiguous US.
+                continue
+
+            # Log info...
+            name = feature['properties']['NAMELSAD']
+            msg = u"{0}:\t{1}, {2}, {3}".format(i,
+                                                name,
+                                                mapping[state_fips],
+                                                geoid)
+            print(msg.encode('utf-8'))
+
+            geometry = feature['geometry']
+            # Fetch all tweets in the region
+            tweets = tweets_in_region(tweet_collection, geometry)
+            skipped = 0
+            for tweet in tweets:
+                # Update to id_str eventually.
+                user_id = tweet['user']['id']
+                if user_id in skip_users:
+                    skipped += 1
+                else:
+                    # Store data.
+                    if user_id not in docs:
+                        doc = docs[user_id]
+                        doc['state_fips'] = state_fips
+                        doc['county_fips'] = county_fips
+                        doc['geoid'] = geoid
+                        doc['user_id'] = user_id
+                        # Prep collection
+                        doc['numHashtags'] = 0
+                        doc['numHashtagsUnique'] = 0
+                        doc['hashtags'] = []
+                        doc['numTweets'] = 0
+                        doc['numTweetsWithHashtags'] = 0
+                        doc['followers_count'] = []
+                        doc['friends_count'] = []
+                        doc['favourites_count'] = []
+                        doc['statuses_count'] = []
+
+                    doc = docs[user_id]
+                    doc['numTweets'] += 1
+                    doc['hashtags'].extend(tweet['hashtags'])
+                    if len(tweet['hashtags']):
+                        doc['numTweetsWithHashtags'] += 1
+                    doc['followers_count'].append(tweet['user']['followers_count'])
+                    doc['friends_count'].append(tweet['user']['friends_count'])
+                    doc['favourites_count'].append(tweet['user']['favourites_count'])
+                    doc['statuses_count'].append(tweet['user']['statuses_count'])
+
+            print("\tSkipped {0} tweets due to user ids.".format(skipped))
+            all_skipped += skipped
+            skips[name] = skipped
+
+            # Finalize docs
+            for doc in docs.values():
+                doc['numHashtags'] = len(doc['hashtags'])
+                doc['numHashtagsUnique'] = len(set(doc['hashtags']))
+                # Keep the list of status counts. This may allow us to order
+                # all follower, friend, favourites, statuses across regions.
+                #mn = min(doc['statuses_count'])
+                #mx = max(doc['statuses_count'])
+                #doc['statuses_count'] = [mn, mx]
+
+            if dry_run:
+                continue
+
+            try:
+                county_collection.insert(docs.values())
+            except pymongo.errors.DocumentTooLarge:
+                # This shouldn't happen. Fail hard.
+                raise
+
+    msg = "\nIn total, skipped {0} tweets due to user ids"
+    print(msg.format(all_skipped))
+    return skips
 
 
