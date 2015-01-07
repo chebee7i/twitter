@@ -27,11 +27,12 @@ def counties_from_json(filename=None):
     """
     Extract county information by state FIPS code from JSON file.
 
-    OLD: Probably not needed anymore.
+    Still used by: hashtag_counts__county
+
     """
     if filename is None:
         # Ugly hack for now.
-        # Will only if site-packages directory is symlinked to the repository.
+        # Will work only if site-packages directory is symlinked to the repository.
         path = os.path.realpath(__file__)
         basedir, filename = os.path.split(path)
         filename = os.path.join(basedir, '../tiger/tl_2014_us_county_properties.json')
@@ -120,7 +121,7 @@ def build_hashtag_counts_by_county(tweet_collection, county_collection, shpfile,
                 del doc['_id']
                 doc2 = doc.copy()
                 items = counts.items()
-                L = len(items)/2
+                L = int(len(items)/2)
                 counts1 = dict(items[:L])
                 counts2 = dict(items[L:])
                 doc['counts'] = counts1
@@ -198,7 +199,7 @@ def build_hashtag_counts_by_state(tweet_collection, state_collection, shpfile,
                 del doc['_id']
                 doc2 = doc.copy()
                 items = counts.items()
-                L = len(items)/2
+                L = int(len(items)/2)
                 counts1 = dict(items[:L])
                 counts2 = dict(items[L:])
                 doc['counts'] = counts1
