@@ -300,6 +300,7 @@ Pulling out hashtagged tweets into their own collection.
 Now we want to be able to query using MongoDBs geospatial tools.
 So we will create a 2dsphere index. We might also be interested in
 seeing location data by date. So we create a compound index for that.
+This takes somewhere less than 3 hours for the ~350,000,000 tweets.
 
     > db.hashtagTweets.ensureIndex({coordinates: "2dsphere"})
     > db.hashtagTweets.ensureIndex({coordinates: "2dsphere", created_at: 1})
