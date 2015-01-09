@@ -11,6 +11,7 @@ import fiona
 import json
 import us
 import os
+import sys
 
 from .geo import hashtag_counts_in, tweets_in_region
 from .helpers import connect
@@ -338,6 +339,7 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
         friends_count : The number of friends at each tweet
         favourites_count: The number of favourited statuses at each tweet
         statuses_count: The number of statuses at each tweet
+        create_at: The creation date and time of each tweet
 
     Note that the statuses_count can be used to get a better sense of how many
     tweets we have missed from the users. This total number combined with the
@@ -386,7 +388,7 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
     with fiona.open(shpfile, 'r') as f:
         for i, feature in enumerate(f):
 
-            if i == 397:
+            if i != 397:
                 continue
 
             if mod_filter is not None and i % 10 != mod_filter:
@@ -411,17 +413,12 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
                                                 mapping[state_fips],
                                                 geoid)
             print(msg.encode('utf-8'))
+            sys.stdout.flush()
 
-            geometry = feature['geometry']
-            # Fetch all tweets in the region
-            tweets = tweets_in_region(tweet_collection, geometry)
-            skipped = 0
-            for tweet in tweets:
+            def process_tweet(tweet):
                 # Update to id_str eventually.
                 user_id = tweet['user']['id']
-                if user_id in skip_users:
-                    skipped += 1
-                else:
+                if user_id not in skip_users:
                     # Store data.
                     if user_id not in docs:
                         doc = docs[user_id]
@@ -439,6 +436,7 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
                         doc['friends_count'] = []
                         doc['favourites_count'] = []
                         doc['statuses_count'] = []
+                        doc['created_at'] = []
 
                     doc = docs[user_id]
                     doc['numTweets'] += 1
@@ -449,21 +447,49 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
                     doc['friends_count'].append(tweet['user']['friends_count'])
                     doc['favourites_count'].append(tweet['user']['favourites_count'])
                     doc['statuses_count'].append(tweet['user']['statuses_count'])
+                    doc['created_at'].append(tweet['created_at'])
 
-            print("\tSkipped {0} tweets due to user ids.".format(skipped))
-            all_skipped += skipped
-            skips[name] = skipped
+            geometry = feature['geometry']
+            try:
+                # Fetch all tweets in the region
+                tweets = tweets_in_region(tweet_collection, geometry)
+                for tweet in tweets.sort('created_at', 1):
+                    process_tweet(tweet)
+                do_sort = False
+            except (pymongo.errors.OperationFailure, Exception):
+                # Fetch all tweets in the region
+                print("Failed to sort in mongo. Manually sorting")
+                sys.stdout.flush()
+                tweets = tweets_in_region(tweet_collection, geometry)
+                do_sort = True
+                for tweet in tweets:
+                    process_tweet(tweet)
+
+            # The sort, to be efficient and use the index requires that the
+            # created_at be listed before the 2dspatial.
+            # See: http://blog.mongolab.com/2012/06/cardinal-ins/
 
             # Finalize docs
             for doc in docs.values():
                 doc['numHashtags'] = len(doc['hashtags'])
                 doc['numHashtagsUnique'] = len(set(doc['hashtags']))
-                # Keep the list of status counts. This may allow us to order
-                # all follower, friend, favourites, statuses across regions.
-                #mn = min(doc['statuses_count'])
-                #mx = max(doc['statuses_count'])
-                #doc['statuses_count'] = [mn, mx]
 
+                # Now sort by datetime.
+                if do_sort:
+                    z = sorted(zip(doc['created_at'],
+                                   doc['statuses_count'],
+                                   doc['followers_count'],
+                                   doc['friends_count'],
+                                   doc['favourites_count']))
+                    z = list(zip(*z))
+                    doc['created_at'] = z[0]
+                    doc['statuses_count'] = z[1]
+                    doc['followers_count'] = z[2]
+                    doc['friends_count'] = z[3]
+                    doc['favourites_count'] = z[4]
+
+            print("\tDone finalizing")
+            sys.stdout.flush()
             if dry_run:
                 continue
 
@@ -473,8 +499,5 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
                 # This shouldn't happen. Fail hard.
                 raise
 
-    msg = "\nIn total, skipped {0} tweets due to user ids"
-    print(msg.format(all_skipped))
-    return skips
 
 
