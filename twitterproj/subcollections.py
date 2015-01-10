@@ -9,6 +9,7 @@ from collections import OrderedDict, defaultdict
 import pymongo
 import fiona
 import json
+from bson import json_util
 import us
 import os
 import sys
@@ -387,9 +388,6 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
 
     with fiona.open(shpfile, 'r') as f:
         for i, feature in enumerate(f):
-
-            if i != 397:
-                continue
 
             if mod_filter is not None and i % 10 != mod_filter:
                 continue
