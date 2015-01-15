@@ -449,6 +449,10 @@ def build_userstats_by_county(tweet_collection, county_collection, shpfile,
 
             geometry = feature['geometry']
             try:
+                # This becomes prohibitively slow when the collection is large.
+                raise Exception
+
+
                 # Fetch all tweets in the region
                 tweets = tweets_in_region(tweet_collection, geometry)
                 for tweet in tweets.sort('created_at', 1):

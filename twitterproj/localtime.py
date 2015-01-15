@@ -12,7 +12,7 @@ TIMEZONES = [('Pacific',  pytz.timezone('America/Los_Angeles')),
              ('Central',  pytz.timezone('America/Chicago')),
              ('Eastern',  pytz.timezone('America/New_York'))]
 
-def get_ustz(localdt, timezone, use_noon=False):
+def get_ustz(localdt, timezone):
     """
     Returns the timezone associated to a local datetime and an IANA timezone.
 
