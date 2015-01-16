@@ -44,6 +44,13 @@ def counties_from_json(filename=None):
 
     with open(filename) as f:
         counties = json.load(f, object_pairs_hook=OrderedDict)
+
+    # Now sort the counties within each state
+    def key_func(x):
+        return x['GEOID']
+    for state_fips in counties.keys():
+        c = counties[state_fips]
+        counties[state_fips] = sorted(c, key=key_func)
     return counties
 
 def write_counties_json(jsonfilename, shpfilename):
@@ -261,7 +268,7 @@ def hashtag_counts__states(db=None, bot_filtered=True):
         collection = db.grids.states.bot_filtered
     else:
         collection = db.grids.states
-    states = us.STATES_CONTIGUOUS
+    states = us.STATES_CONTIGUOUS # sorted alphabetically
     for state in states:
         yield get_hashtag_counts('abbrev', state.abbr, collection)
 
