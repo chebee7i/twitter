@@ -46,6 +46,8 @@ def get_ustz(localdt, timezone):
 
     """
     # Use noon to guarantee that we have the same day in each timezone.
+    # This is desirable in the sense that we don't want someone's tweet jumping
+    # from Eastern to Central, for example, at the end of daylight savings time.
     localdt = datetime.datetime(localdt.year, localdt.month, localdt.day, 12)
 
     timezone = pytz.timezone(timezone)
