@@ -6,4 +6,4 @@ from .hashtags import *
 from .jobmanager import grouper, JobManager
 from .localtime import *
 from .tweetrates import *
-
+from .fisher import *
