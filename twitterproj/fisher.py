@@ -63,7 +63,7 @@ def top_hashtags(n, sortkey, collection, extract=True):
         ht = docs
     return ht
 
-def pipline(N, hashtags, norm):
+def pipeline(N, hashtags, norm):
     db = twitterproj.connect()
     collection = db.grids.counties.bot_filtered
 
