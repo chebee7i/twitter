@@ -29,6 +29,7 @@ tiger/tl_*.shx
 tiger/tl_*.dbf
 tiger/tl_*.xml
 tiger/tl_*.zip
+tiger/cb_*
 tiger/TGRSHP2014_TechDoc.pdf
 
 # Generated output
