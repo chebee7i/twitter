@@ -7,51 +7,19 @@ from operator import itemgetter
 import time
 
 import numpy as np
+from scipy.stats.mstats import mquantiles
 
 import twitterproj
 from twitterproj.fisher import *
 from twitterproj.fisher import pipeline
 
-def main():
+db = twitterproj.connect()
+
+def hashtag_scores():
     N = 5000
 
-    db = twitterproj.connect()
-    collection = db.hashtags.bot_filtered
-
-    hashtags = []
-    hashtags.extend(top_hashtags(N, 'count', collection, extract=False))
-    hashtags.extend(top_hashtags(N, 'user_count', collection, extract=False))
-
-    hashtags_dict = {}
-    for hashtag_doc in hashtags:
-        ht = hashtag_doc['_id']
-        hashtags_dict[ht] = hashtag_doc
-    hashtags = list(hashtags_dict.keys())
-
-    norms = [frobenius_norm]
-    scores = []
-    for norm in norms:
-        start = time.time()
-        scores.append(pipeline(N, hashtags, norm))
-        stop = time.time()
-        print norm, stop - start
-    scores = list(zip(*scores))
-
-    lines = []
-    for i, hashtag in enumerate(hashtags):
-
-        line = [
-            hashtag,
-            hashtags_dict[hashtag]['count'],
-            hashtags_dict[hashtag]['user_count'],
-            scores[i][0],
-            #scores[i][1],
-        ]
-        lines.append(line)
-
-    lines.sort(key=itemgetter(3))
+    lines = frobenius_hashtags(5000)
     lines = [u','.join(map(unicode, line)) for line in lines]
-
     lines.insert(0, u'# hashtag, count, user count, frobenius norm of FIM')
 
     filename = 'htscores.csv'
@@ -97,4 +65,103 @@ def scatter():
     f.tight_layout()
     f.savefig('scores.pdf')
 
-main()
+
+class Runner(object):
+    def __init__(self, hashtags):
+        self.hashtags = hashtags
+    def __call__(self, k):
+        htags = self.hashtags[:k]
+        counties = frobenius_counties(htags)
+        scores = [x[1] for x in counties]
+        quants = mquantiles(scores)
+        return quants
+
+def county_scores(k=None, relative=True, to_csv=True):
+    if k is None:
+        import sys
+        try:
+            k = int(sys.argv[1])
+        except IndexError:
+            k = 50
+
+    N = 5000
+    lines = frobenius_hashtags(N)
+
+    hashtags = [line[0] for line in lines]
+
+    htags = hashtags[:k]
+    counties = frobenius_counties(htags, relative=relative)
+
+    import json
+    d = {}
+    for geoid, score, counts in counties:
+        d[geoid] = score
+    d['min'] = 0
+    d['max'] = 1
+    with open('json/grids.counties.bot_filtered.fisherscores.json', 'w') as f:
+        json.dump(d, f)
+
+    d = {}
+    for geoid, score, counts in counties:
+        d[geoid] = (score, counts)
+
+    if to_csv:
+        lines = []
+        for geoid, score, counts in counties:
+            line = [geoid, score]
+            line.extend(counts)
+            line = map(str, line)
+            lines.append(','.join(line))
+        header = '# geoid,{0}fisher score, [counts]'
+        if relative:
+            header = header.format(' relative ')
+        else:
+            header = header.format(' ')
+        lines.insert(0, header)
+        filename = 'hashtag_fisherscores_relative_n{0}.csv'
+        filename = filename.format(k)
+        with open(filename, 'w') as f:
+            f.write('\n'.join(lines))
+
+    return htags, counties, d
+
+def county_quants(k=None):
+    if k is None:
+        import sys
+        try:
+            k = int(sys.argv[1])
+        except IndexError:
+            k = 50
+
+    N = 5000
+    lines = frobenius_hashtags(N)
+
+    hashtags = [line[0] for line in lines]
+
+    from multiprocessing import Pool
+    import json
+    p = Pool(22)
+    kvals = range(10, 205, 5)
+    runner = Runner(hashtags)
+    quants = p.map(runner, kvals)
+    quants = map(list, quants)
+
+    d = [kvals, quants]
+    with open('quants.json', 'w') as f:
+        json.dump(d, f)
+
+    return kvals, quants
+
+def plot_quants(kvals, quants):
+    import matplotlib.pyplot as plt
+    import seaborn
+    quants = np.array(quants)
+    quants = quants.transpose()
+    plt.plot(quants[0], 'o-', label="25th percentile")
+    plt.plot(quants[1], 'o-', label="50th percentile")
+    plt.plot(quants[2], 'o-', label="75th percentile")
+    plt.ylabel('Relative Fisher Score')
+    plt.xlabel('Number of Hashtags')
+    plt.legend(loc='best')
+    plt.savefig('fisherscores.pdf')
+

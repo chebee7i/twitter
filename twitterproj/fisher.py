@@ -21,6 +21,8 @@ __all__ = [
     'top_hashtags',
     'operator_norm',
     'frobenius_norm',
+    'frobenius_hashtags',
+    'frobenius_counties',
 ]
 
 def fisher_information(counts):
@@ -63,7 +65,7 @@ def top_hashtags(n, sortkey, collection, extract=True):
         ht = docs
     return ht
 
-def pipeline(N, hashtags, norm):
+def pipeline(hashtags, norm):
     db = twitterproj.connect()
     collection = db.grids.counties.bot_filtered
 
@@ -85,3 +87,76 @@ def frobenius_norm(counts):
     B = polygamma(1, counts) - polygamma(1, counts.sum())
     B = (B**2).sum()
     return np.sqrt(A + B)
+
+def frobenius_hashtags(N):
+    """
+    Returns the top N hashtags according to Frobenius norm on the Fisher matrix.
+
+    """
+    db = twitterproj.connect()
+    collection = db.hashtags.bot_filtered
+
+    hashtags = []
+    hashtags.extend(top_hashtags(N, 'count', collection, extract=False))
+    hashtags.extend(top_hashtags(N, 'user_count', collection, extract=False))
+
+    hashtags_dict = {}
+    for hashtag_doc in hashtags:
+        ht = hashtag_doc['_id']
+        hashtags_dict[ht] = hashtag_doc
+    hashtags = list(hashtags_dict.keys())
+
+    norms = [frobenius_norm]
+    scores = []
+    for norm in norms:
+        scores.append(pipeline(hashtags, norm))
+    scores = list(zip(*scores))
+
+    lines = []
+    for i, hashtag in enumerate(hashtags):
+
+        line = [
+            hashtag,
+            hashtags_dict[hashtag]['count'],
+            hashtags_dict[hashtag]['user_count'],
+            scores[i][0],
+        ]
+        lines.append(line)
+
+    lines.sort(key=itemgetter(3))
+    return lines
+
+def frobenius_counties(hashtags, relative=True):
+    """
+    Returns the county geoid, frobenius score, and counts over `hashtags`.
+
+    Parameters
+    ----------
+    diffscore : bool
+        If `true` the relative Frobenius score is calculated and returned.
+        The ratio is calculated with respect to the maximum possible score.
+
+    The posterior mean distribution is just the normalization of the counts.
+
+    """
+    db = twitterproj.connect()
+    collection = db.grids.counties.bot_filtered
+
+    x = hashtag_countycounts(hashtags, collection, prior=1/2)
+    x = x.transpose()
+
+    # x.shape is (counties, hashtags)
+    geoids = []
+    for i, doc in enumerate(twitterproj.hashtag_counts__counties()):
+        geoids.append(doc['geoid'])
+
+    if relative:
+        prior = np.array([1/2 for _ in range(len(hashtags))])
+        maxscore = frobenius_norm(prior)
+    else:
+        maxscore = 1
+
+    scores = [frobenius_norm(counts) / maxscore for counts in x]
+
+    out = zip(geoids, scores, x)
+    return out
