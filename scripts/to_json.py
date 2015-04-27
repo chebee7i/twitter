@@ -82,7 +82,6 @@ def entropy(place):
 
 def names():
     # We use a single file for this one.
-
     data = defaultdict(dict)
 
     # The abbreviations of the contiguous states
@@ -641,4 +640,3 @@ if __name__ == '__main__':
             print(number,family)
 
     """
-
