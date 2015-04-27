@@ -147,7 +147,7 @@ class JobManager(object):
         User-implemented function to launch processes.
 
         """
-        for i in range(10):
+        for i in range(self.nProc):
             self.launch_child(job_id=i, args=None)
 
     def child(self, job_id, args):
@@ -173,11 +173,9 @@ class JobManager(object):
             print("\n\nFREE: {0} (after exception)".format(job_id))
             self.mark_free(job_id)
             raise
-
         else:
             print("DONE: {0}".format(job_id))
             self.mark_done(job_id)
-
         finally:
             end = datetime.datetime.now()
             print("Finish {0}: \t{1}".format(job_id, end))
