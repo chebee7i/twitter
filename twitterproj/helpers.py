@@ -396,9 +396,6 @@ def populate_db(path, dry_run=False):
         if basename in sources:
             print("Already inserted.")
             continue
-        elif '-09-' in basename:
-            print("Skipping tweets past the stop date.")
-            continue
         else:
             sys.stdout.flush()
             p(filename)
