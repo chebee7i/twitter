@@ -126,6 +126,12 @@ class JobManager(object):
             c = c.fetchone()[0]
             return c
 
+    def find_free(self):
+        with self.conn as conn:
+            c = conn.execute("SELECT job from jobs where status = ?", [FREE])
+            c = c.fetchall()
+            return c
+
     def main(self):
         import sys
         if len(sys.argv) >= 2:
@@ -147,8 +153,11 @@ class JobManager(object):
         User-implemented function to launch processes.
 
         """
+        free = self.find_free()
         for i in range(self.nProc):
-            self.launch_child(job_id=i, args=None)
+            if i > len(free):
+                break
+            self.launch_child(job_id=free[i], args=None)
 
     def child(self, job_id, args):
 
