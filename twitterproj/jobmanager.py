@@ -115,7 +115,7 @@ class JobManager(object):
             statement = """UPDATE jobs SET status = ? where status = ?"""
             conn.execute(statement, [FREE, BUSY])
 
-    def free_all():
+    def free_all(self):
         with self.conn as conn:
             statement = """UPDATE jobs SET status = ?"""
             conn.execute(statement, [FREE])
@@ -129,7 +129,8 @@ class JobManager(object):
     def find_free(self):
         with self.conn as conn:
             c = conn.execute("SELECT job from jobs where status = ?", [FREE])
-            c = c.fetchall()
+            c = [x[0] for x in c.fetchall()]
+            c.sort()
             return c
 
     def main(self):
@@ -145,6 +146,9 @@ class JobManager(object):
             elif sys.argv[1] == 'free':
                 print("Marking all busy jobs as free.")
                 self.mark_busy_as_free()
+            elif sys.argv[1] == 'clear':
+                print("Marking all jobs as free ")
+                self.free_all()
         else:
             print("Busy count: {0}".format(self.busy_count()))
 
@@ -154,10 +158,12 @@ class JobManager(object):
 
         """
         free = self.find_free()
-        for i in range(self.nProc):
-            if i > len(free):
-                break
-            self.launch_child(job_id=free[i], args=None)
+        while len(free) > 0:
+            if self.busy_count() >= self.nProc:
+                time.sleep(30)
+                continue
+            free = self.find_free()
+            self.launch_child(job_id=free[0], args=None)
 
     def child(self, job_id, args):
 
