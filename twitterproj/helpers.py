@@ -136,7 +136,7 @@ def location_match(tweet, polygon, allow_place=True):
 
     return match
 
-def tweets(filename, with_ratelimits=False):
+def tweets(filename, with_ratelimits=False, raise_on_error=True):
     """
     Simple parsing of tweets.
 
@@ -148,6 +148,7 @@ def tweets(filename, with_ratelimits=False):
         location = 0
         for i, line in enumerate(iter(fobj.readline, b'')):
             line = line.strip()
+            valid = False
             if not line:
                 continue
             try:
@@ -162,22 +163,31 @@ def tweets(filename, with_ratelimits=False):
                 except ValueError:
                     msg = "JSON error decoding line {0} of {1} at {2} bytes:\n{3!r}"
                     msg = msg.format(i, filename, location, line)
-                    raise ValueError(msg)
+                    if raise_on_error:
+                        raise ValueError(msg)
+                    else:
+                        print(msg)
+                else:
+                    valid = True
+                    location = fobj.tell()
             else:
+                valid = True
                 location = fobj.tell()
-            if with_ratelimits:
-                yield tweet
-            elif not is_ratelimit(tweet):
-                yield tweet
 
-def us_geocoded_tweets(filename):
+            if with_ratelimits:
+                yield tweet, valid
+            elif not is_ratelimit(tweet):
+                yield tweet, valid
+
+def us_geocoded_tweets(filename, raise_on_error=True):
     """
     Iterator over US geocoded tweets.
 
     """
-    for tweet in tweets(filename, with_ratelimits=False):
+    for tweet, valid in tweets(filename, with_ratelimits=False,
+                               raise_on_error=raise_on_error):
         if location_match(tweet, USA, allow_place=False):
-            yield tweet
+            yield tweet, valid
 
 class Tweet(OrderedDict):
 
@@ -271,7 +281,7 @@ def counts(filename):
     geocoded = 0
     usa_geo= 0
     usa_nogeo = 0
-    for tweet in tweets(filename, with_ratelimits=True):
+    for tweet, valid in tweets(filename, with_ratelimits=True):
         total += 1
         if is_ratelimit(tweet):
             ratelimits += 1
@@ -297,7 +307,7 @@ def test_run(filename, count=10):
     Prints the first 10 US geocoded tweets from `filename`.
 
     """
-    for i, tweet in enumerate(us_geocoded_tweets(filename)):
+    for i, (tweet, valid) in enumerate(us_geocoded_tweets(filename)):
         if i > count:
             break
         try:
@@ -342,7 +352,7 @@ def insert_chunked(filename, db, chunksize=10**5, log=True, dry_run=False):
     tweets = []
     count = 0
     print("Chunk: {0}".format(count))
-    for i, tweet in enumerate(us_geocoded_tweets(filename)):
+    for i, (tweet, valid) in enumerate(us_geocoded_tweets(filename)):
         if log and i % (chunksize/10) == 0:
             print("\t{0}".format(i))
         t = extract(tweet)
