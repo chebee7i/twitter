@@ -121,11 +121,14 @@ class JobManager(object):
             statement = """UPDATE jobs SET status = ?"""
             conn.execute(statement, [FREE])
 
-    def busy_count(self):
+    def count(self, status):
         with self.conn as conn:
-            c = conn.execute("SELECT count(*) from jobs where status = ?", [BUSY])
+            c = conn.execute("SELECT count(*) from jobs where status = ?", [status])
             c = c.fetchone()[0]
             return c
+
+    def busy_count(self):
+        return self.count(BUSY)
 
     def find_free(self):
         with self.conn as conn:
@@ -155,8 +158,9 @@ class JobManager(object):
                 print("Marking all jobs as free ")
                 self.free_all()
         else:
-            print("Busy count: {0}".format(self.busy_count()))
-            print("Free count: {0}".format(len(self.find_free())))
+            print("Busy count: {}".format(self.count(BUSY)))
+            print("Free count: {}".format(self.count(FREE)))
+            print("Done count: {}".format(self.count(DONE)))
 
     def parent(self):
         """
