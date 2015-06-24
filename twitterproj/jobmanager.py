@@ -51,6 +51,7 @@ class JobManager(object):
         self.conn = conn
         self.nProc = nProc
         self.processes = []
+        self.stagger = None
 
     def insert_job(self, job_id):
         """
@@ -133,24 +134,29 @@ class JobManager(object):
             c.sort()
             return c
 
-    def main(self):
+    def main(self, arg=None):
         import sys
-        if len(sys.argv) >= 2:
-            if sys.argv[1] == 'go':
+        if arg is None and len(sys.argv) >= 2:
+            arg = sys.argv[1]
+
+        if arg:
+            if arg == 'go':
                 try:
                     self.parent()
                 except KeyboardInterrupt:
                     # Interrupt is passed to subprocesses.
                     pass
 
-            elif sys.argv[1] == 'free':
+            elif arg == 'free':
                 print("Marking all busy jobs as free.")
                 self.mark_busy_as_free()
-            elif sys.argv[1] == 'clear':
+
+            elif arg == 'clear':
                 print("Marking all jobs as free ")
                 self.free_all()
         else:
             print("Busy count: {0}".format(self.busy_count()))
+            print("Free count: {0}".format(len(self.find_free())))
 
     def parent(self):
         """
@@ -163,11 +169,13 @@ class JobManager(object):
                 time.sleep(30)
                 continue
             free = self.find_free()
-            self.launch_child(job_id=free[0], args=None)
+            if len(free):
+                self.launch_child(job_id=free[0], args=None)
 
     def child(self, job_id, args):
 
-        # Job has been marked busy. You must FREE it, or mark it DONE.
+        # Job has been marked busy. It will be freed if there are any uncaught
+        # exceptions here. If will be marked done if this finishes.
 
         print("\tJob ID: {0}".format(job_id))
         print("\tArgs: {0}".format(args))
@@ -199,7 +207,7 @@ class JobManager(object):
 
     def launch_child(self, job_id, args, wait=60, insert=True):
         # Reserve this chunk, if possible.
-        stagger = 3
+        stagger = self.stagger or 3
         try:
             reserved, status = self.reserve_job(job_id)
             if not reserved:
