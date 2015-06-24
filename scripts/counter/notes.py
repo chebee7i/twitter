@@ -124,9 +124,9 @@ def plot_usworld():
     world_daily = [arr.sum() for arr in np.array_split(world, slots / (12 * 24))]
 
     f, ax = plt.subplots()
-    ax.plot(days, us_daily, label='US')
-    ax.plot(days, world_daily, label='World')
-    ax.set_title('All Hashtags')
+    ax.plot(days[-200:], us_daily[-200:], label='US')
+    ax.plot(days[-200:], world_daily[-200:], label='World')
+    ax.set_title('Geotagged Hashtags')
     ax.set_ylabel('Count')
     ax.set_xlabel('Time')
     f.autofmt_xdate()
@@ -185,6 +185,7 @@ def plot_repeaters(hashtags, kmax=20):
 
 def main():
     plot_usworld()
+    """
     hashtags = [
         ('ye', 's', ''),
         ('n', 'o', ''),
@@ -194,6 +195,7 @@ def main():
         ('', 'jk', ''),
     ]
     plot_repeaters(hashtags)
+    """
 
 if __name__ == '__main__':
     main()

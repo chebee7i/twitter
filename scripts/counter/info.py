@@ -30,7 +30,7 @@ DB = 'hashtag_counts.db'
 DB2 = 'hashtag_counts_new.db'
 conn = sqlite3.connect(DB)
 
-def fetch(hashtag, dense=True):
+def fetch(hashtag, dense=True, conn=conn):
     """
     Returns the stored data for a given hashtag.
 
@@ -60,8 +60,18 @@ def fetch(hashtag, dense=True):
     if dense:
         x = np.array([ d.get(idx, 0) for idx in range(slots) ])
         out[-1] = x
+    else:
+        out[-1] = d
 
     return tuple(out), stored
+
+def to_matlab(counts):
+    z = sorted(counts.items())
+    indexes, counts = zip(*z)
+    indexes = map(str, indexes)
+    counts = map(str, counts)
+    s = '[{};{}]'.format(','.join(indexes), ','.join(counts))
+    return s
 
 def plot_usworld():
     import matplotlib.pyplot as plt
@@ -130,6 +140,10 @@ def create_tables(filename):
 insert = """INSERT INTO hashtags VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
 def calculate_stats():
+    """
+    for i in `seq 0 14`; do sleep 10;python info.py $i & done
+
+    """
 
     import sys
     i = int(sys.argv[1])
@@ -193,4 +207,75 @@ def worker(hashtags, taskid):
 
     print "{0}:\tFinished.".format(taskid)
 
-calculate_stats()
+def to_matlab_counts():
+    """
+    for i in `seq 0 14`; do sleep 10;python info.py $i & done
+
+    """
+    import sys
+    i = int(sys.argv[1])
+
+    hashtags = conn.execute('SELECT hashtag from hashtags')
+    hashtags = [row[0] for row in hashtags]
+
+    nproc = 20
+    hashtags = np.array_split(hashtags, nproc)[i]
+    worker_matlab(hashtags, i)
+
+def worker_matlab(hashtags, taskid):
+    conn1 = sqlite3.connect(DB2)
+    conn2 = create_tables('hashtag_counts_matlab.db')
+
+    L = len(hashtags)
+    percentJump = 0.01
+    step = int(L * percentJump)
+    print "Step size:", step
+
+    timediffs = []
+    start = time.time()
+    rows = []
+    for i, hashtag in enumerate(hashtags):
+        with conn1:
+            row, _ = fetch(hashtag, dense=False, conn=conn1)
+        row = list(row)
+        row[-1] = to_matlab(row[-1])
+        row = tuple(row)
+        rows.append(row)
+
+        percent, remainder = divmod(i, step)
+
+        if remainder == 0:
+            with conn2:
+                conn2.executemany(insert, rows)
+            rows = []
+
+            curr = time.time()
+            if i >= 3:
+                interval = curr - start
+                timediffs.append(interval)
+                interval_delta = datetime.timedelta(seconds=interval)
+                print "{0}:\tInterval: {1}".format(taskid, ago.human(interval_delta))
+            start = curr
+            msg = "{0}:\t{1}% complete.".format(taskid, percent * percentJump * 100)
+
+            if i >= 3:
+                # The mean number of seconds per percent
+                avgtime = np.mean(timediffs)
+                timeleft = (1 - percent * percentJump) / percentJump * avgtime
+                if timeleft < 0:
+                    timeleft = 0
+                delta = datetime.timedelta(seconds=timeleft)
+                future = datetime.datetime.now() + delta
+                msg2 = " Estimated completion {0}".format(ago.human(future))
+                msg += msg2
+            print(msg)
+    else:
+        with conn2:
+            conn2.executemany(insert, rows)
+
+    print "{0}:\tFinished.".format(taskid)
+
+if __name__ == '__main__':
+    #calculate_stats()
+    to_matlab_counts()
+    pass
