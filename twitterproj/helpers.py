@@ -179,15 +179,38 @@ def tweets(filename, with_ratelimits=False, raise_on_error=True):
             elif not is_ratelimit(tweet):
                 yield tweet, valid
 
-def us_geocoded_tweets(filename, raise_on_error=True):
+def us_geocoded_tweets(filename, require_hashtags=False, raise_on_error=True):
     """
     Iterator over US geocoded tweets.
 
     """
+    all_tweets = not require_hashtags
     for tweet, valid in tweets(filename, with_ratelimits=False,
                                raise_on_error=raise_on_error):
         if location_match(tweet, USA, allow_place=False):
-            yield tweet, valid
+            if all_tweets or has_hashtags(tweet):
+                yield tweet, valid
+
+def has_hashtags(tweet):
+    if 'entities' in tweet and 'hashtags' in tweet['entities']:
+        for hashtag_dict in tweet['entities']['hashtags']:
+            return True
+        return False
+    else:
+        return False
+
+def get_hashtags(tweet):
+    hashtags = []
+    if 'entities' in tweet and 'hashtags' in tweet['entities']:
+        for hashtag_dict in tweet['entities']['hashtags']:
+            # Received hashtags are case-sensitive and are also displayed
+            # case-sensitively in their tweets. However, Twitter treats
+            # hashtags case-insensitively for tracking purposes.
+            # So we lowercase them all in the database since we want to minimize
+            # tracking errors and have no plans to do a study on how users tend
+            # to visually display their hashtags.
+            hashtags.append(hashtag_dict['text'].lower())
+    return hashtags
 
 class Tweet(OrderedDict):
 
@@ -226,18 +249,8 @@ class Tweet(OrderedDict):
         shape = asShape(coords)
         return shape
 
-def get_hashtags(tweet):
-    hashtags = []
-    if 'entities' in tweet and 'hashtags' in tweet['entities']:
-        for hashtag_dict in tweet['entities']['hashtags']:
-            # Received hashtags are case-sensitive and are also displayed
-            # case-sensitively in their tweets. However, Twitter treats
-            # hashtags case-insensitively for tracking purposes.
-            # So we lowercase them all in the database since we want to minimize
-            # tracking errors and have no plans to do a study on how users tend
-            # to visually display their hashtags.
-            hashtags.append(hashtag_dict['text'].lower())
-    return hashtags
+    def has_hashtags(self):
+        return len(self['hashtags']) > 0
 
 def extract(tweet):
     """
@@ -250,7 +263,7 @@ def extract(tweet):
     profile_dt = datetime.strptime(tweet['user']['created_at'], template)
 
     user = [
-        ('id', tweet['user']['id']),
+        ('id_str', tweet['user']['id_str']),
         ('favourites_count', tweet['user']['favourites_count']),
         ('followers_count', tweet['user']['followers_count']),
         ('friends_count', tweet['user']['friends_count']),
@@ -319,14 +332,14 @@ def test_run(filename, count=10):
             print(t, end='\n\n')
         i += 1
 
-def connect():
+def connect(dbname='twitter'):
     """
     Connect to a local mongo database for tweets.
 
     """
     from pymongo import MongoClient
     client = MongoClient()
-    db = client.twitter
+    db = client.__getattr__(self, dbname)
 
     return db
 
@@ -336,7 +349,7 @@ def take(n, iterable):
     """
     return list(islice(iterable, n))
 
-def insert_chunked(filename, db, chunksize=10**5, log=True, dry_run=False):
+def insert_chunked(filename, db, chunksize=10**5, force_hashtags=False, log=True, dry_run=False):
     """
     Insert tweets in mongodb database.
 
@@ -356,7 +369,11 @@ def insert_chunked(filename, db, chunksize=10**5, log=True, dry_run=False):
         if log and i % (chunksize/10) == 0:
             print("\t{0}".format(i))
         t = extract(tweet)
-        tweets.append(t)
+        if force_hashtags:
+            if t.has_hashtags():
+                tweets.append(t)
+        else:
+            tweets.append(t)
         if len(tweets) == chunksize:
             if not dry_run:
                 collection.insert(tweets)
